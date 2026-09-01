@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 const ChatMessageList = ({ messages, isTyping, isOffline, hasError, onRetry }) => {
   const endOfMessagesRef = useRef(null);
@@ -77,10 +78,17 @@ const ChatMessageList = ({ messages, isTyping, isOffline, hasError, onRetry }) =
                   boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
                   fontSize: '14px',
                   lineHeight: '1.5',
-                  wordWrap: 'break-word',
+                  wordBreak: 'break-word',
+                  whiteSpace: 'pre-line',
                   border: isBot ? '1px solid rgba(0,0,0,0.05)' : 'none'
                 }}>
-                  {msg.text}
+                  {isBot ? (
+                    <div className="markdown-content">
+                      <ReactMarkdown>{msg.text}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    msg.text
+                  )}
                 </div>
                 
                 <div style={{
@@ -131,6 +139,19 @@ const ChatMessageList = ({ messages, isTyping, isOffline, hasError, onRetry }) =
                   margin: 0 1px;
                   color: #94a3b8;
                   font-size: 10px;
+                }
+                .markdown-content p {
+                  margin: 0 0 8px 0;
+                }
+                .markdown-content p:last-child {
+                  margin-bottom: 0;
+                }
+                .markdown-content ol, .markdown-content ul {
+                  margin: 4px 0;
+                  padding-left: 20px;
+                }
+                .markdown-content li {
+                  margin-bottom: 4px;
                 }
               `}
             </style>
