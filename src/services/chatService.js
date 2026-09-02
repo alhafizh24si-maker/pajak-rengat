@@ -65,6 +65,9 @@ export async function createChatSession(sessionId, metadata = {}) {
         status: 'active',
         channel: metadata.source || 'web_widget',
         primary_category: metadata.category || 'Lainnya',
+        message_count: 0,
+        matched_count: 0,
+        unmatched_count: 0,
         started_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }])
@@ -129,7 +132,7 @@ export async function endSession(sessionId, status = 'resolved') {
 }
 
 // ═══════════════════════════════════════════════════
-// MESSAGE LOGGING (Mendukung Objek tunggal & Argumen Terpisah)
+// MESSAGE LOGGING (Dengan Fitur Auto Increment Counter)
 // ═══════════════════════════════════════════════════
 
 export async function logChatMessage(arg1, roleArg, textArg, confidenceScoreArg = null, metadataArg = {}) {
@@ -193,13 +196,37 @@ export async function logChatMessage(arg1, roleArg, textArg, confidenceScoreArg 
       template_id: metadata.templateId || null,
     };
 
+    // 1. Simpan pesan baru ke tabel chat_messages
     const { data, error } = await supabase.from('chat_messages').insert(messageData);
 
     if (error) {
       console.error(`[logChatMessage] Database error:`, error);
+      return { data: null, error };
     }
 
-    return { data, error };
+    // 2. ⚡ PERBAIKAN: Hitung & Update message_count di chat_sessions
+    const { data: currentSession } = await supabase
+      .from('chat_sessions')
+      .select('message_count, matched_count, unmatched_count')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+
+    if (currentSession) {
+      const isMatched = role === 'bot' && (metadata.isTemplateUsed || (confidenceScore && confidenceScore > 0));
+      const isUnmatched = role === 'bot' && !isMatched;
+
+      await supabase
+        .from('chat_sessions')
+        .update({
+          message_count: (currentSession.message_count || 0) + 1,
+          matched_count: isMatched ? (currentSession.matched_count || 0) + 1 : (currentSession.matched_count || 0),
+          unmatched_count: isUnmatched ? (currentSession.unmatched_count || 0) + 1 : (currentSession.unmatched_count || 0),
+          updated_at: new Date().toISOString()
+        })
+        .eq('session_id', sessionId);
+    }
+
+    return { data, error: null };
   } catch (exception) {
     console.error(`[logChatMessage] Exception:`, exception);
     return { data: null, error: exception };

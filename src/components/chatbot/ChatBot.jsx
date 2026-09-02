@@ -37,6 +37,7 @@ Silakan ketik **angka menu** atau **pilih tombol** di bawah ini:
 };
 
 const CONTEXT_TIMEOUT_MS = 5 * 60 * 1000;
+const WA_ADMIN_NUMBER = '628123456789'; // 💬 Ganti dengan nomor WhatsApp Helpdesk/Admin kamu
 
 const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
   const [messages, setMessages] = useState([]);
@@ -59,6 +60,18 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
   const contextTimerRef = useRef(null);
   const sessionInitialized = useRef(false);
 
+  // ⚡ HELPER: Pengarah ke WhatsApp
+  const redirectToWhatsApp = useCallback((customMessage) => {
+    const cleanPhone = WA_ADMIN_NUMBER.replace(/[^0-9]/g, '');
+    const defaultText = `Halo Admin KPP Pratama Rengat, saya memerlukan bantuan petugas langsung untuk Sesi: ${sessionId || '-'}`;
+    const messageText = customMessage || defaultText;
+    const encodedText = encodeURIComponent(messageText);
+    const waUrl = `https://wa.me/${cleanPhone}?text=${encodedText}`;
+
+    // Membuka WhatsApp di tab baru
+    window.open(waUrl, '_blank');
+  }, [sessionId]);
+
   const mockOptions = {
     null: [
       { id: 1, label: '1. Billing PPh Tanah / UMKM', action: 'reply', reply_text: `**📌 Layanan Kode Billing Pajak**\n\nSilakan ketik kode menu pilihan Anda:\n\n* **1A** : PPh Tanah / Jual Beli (PHTB)\n* **1B** : PPh Final UMKM (0,5%)\n* **1C** : Kehilangan Bukti Bayar / Cetak BPN`, category: 'e-Billing', priority: 'P3' },
@@ -66,7 +79,7 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
       { id: 3, label: '3. Status & Pengambilan SKB', action: 'reply', reply_text: '**📌 Informasi Surat Keterangan Bebas (SKB)**\n\n* **Jangka Waktu:** Maksimal 3 hari kerja.\n* **Pengambilan Fisik:** Ke TPT KPP Pratama Rengat membawa BPS.\n* **Pengiriman Online:** Diproses via WhatsApp jika domisili jauh.', category: 'Layanan', priority: 'P3' },
       { id: 4, label: '4. Update Email & No HP', action: 'reply', reply_text: `**📌 Pengubahan Email & Nomor HP Terdaftar**\n\nSilakan lengkapi data berikut:\n\n1. Nomor NIK / NPWP:\n2. Nama Lengkap:\n3. Email Baru (Aktif):\n4. Nomor HP Baru (Aktif):\n\n⚠️ **Wajib Lampirkan:** Foto KTP fisik dan Foto Selfie memegang KTP.`, category: 'Profil', priority: 'P2' },
       { id: 5, label: '5. Kendala Maps Coretax', action: 'reply', reply_text: '**📌 Solusi Kendala Seksi Pengawasan Kosong (Coretax)**\n\n* Pastikan Anda telah mengklik dan menentukan **titik lokasi alamat** pada **Peta (Maps)** yang tersedia.\n* Seksi Pengawasan akan terisi otomatis setelah lokasi ditentukan.', category: 'NPWP', priority: 'P3' },
-      { id: 6, label: '6. Hubungi Petugas', action: 'human', reply_text: '🎧 **Layanan Helpdesk KPP Pratama Rengat**\n\nMenghubungkan Anda ke petugas kami...\nSilakan tuliskan kendala Anda secara lengkap.', category: 'Konsultasi', priority: 'P2' },
+      { id: 6, label: '6. Hubungi Petugas', action: 'human', reply_text: '🎧 **Layanan Helpdesk KPP Pratama Rengat**\n\nMenghubungkan Anda ke petugas kami via WhatsApp...', category: 'Konsultasi', priority: 'P2' },
     ],
     1: [
       { id: '1a', label: '1A. PPh Tanah (PHTB)', action: 'reply', reply_text: `**📌 Permohonan Kode Billing PPh Tanah (PHTB)**\n\nSilakan salin dan lengkapi data berikut:\n\n* Nama Wajib Pajak:\n* NIK (tanpa tanda baca):\n* NOP (tanpa tanda baca):\n* Alamat Objek Pajak:\n* Masa Pembayaran:\n* Nominal PPh:\n\nPetugas kami akan segera memproses kode billing Anda.`, category: 'e-Billing', priority: 'P2' },
@@ -370,6 +383,12 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
 
           await updateChatSession(sessionId, { status: 'escalated' });
         }
+
+        // ⚡ REDIRECT KE WHATSAPP (Setelah 3x tidak ada kecocokan jawaban)
+        setTimeout(() => {
+          redirectToWhatsApp(`Halo Admin KPP Pratama Rengat, saya memiliki pertanyaan yang membutuhkan jawaban langsung dari petugas (Sesi: ${sessionId}): "${text}"`);
+        }, 1500);
+
       } else {
         await addBotMessage(fallbackResponses.noMatch, {
           category: 'Konsultasi',
@@ -427,6 +446,17 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
         botResponseText,
         { category: opt.category, priority: opt.priority }
       );
+
+      // ⚡ REDIRECT KE WHATSAPP (Jika opsi bertipe 'human' / Hubungi Petugas)
+      if (opt.action === 'human' || opt.id === 6 || opt.label.toLowerCase().includes('hubungi petugas')) {
+        if (sessionId) {
+          await updateChatSession(sessionId, { status: 'escalated' });
+        }
+        setTimeout(() => {
+          redirectToWhatsApp(`Halo Admin KPP Pratama Rengat, saya butuh bantuan langsung mengenai menu '${opt.label}' (Sesi ID: ${sessionId})`);
+        }, 1200);
+        return;
+      }
 
       if (opt.id) {
         setLastMenuId(opt.id);
@@ -565,4 +595,4 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
   );
 };
 
-export default ChatBot;
+export default ChatBot; 
