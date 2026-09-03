@@ -5,97 +5,15 @@ import {
   getDashboardStats,
   getTemplates,
   subscribeToNewChats,
+  subscribeToNewMessages,
   unsubscribe,
+  logChatMessage,
+  updateChatSession
 } from '../../services/chatService';
 
-
 // ── Dummy Data Fallback ──
-const defaultSessions = [
-  {
-    sessionId: 'web-1705312200000-a3f2k1',
-    channel: 'web',
-    status: 'resolved',
-    startedAt: '2025-01-15T10:30:00',
-    endedAt: '2025-01-15T10:35:00',
-    firstResponseTimeMs: 23000,
-    messages: [
-      { role: 'user', text: 'lupa efin', timestamp: '2025-01-15T10:30:10' },
-      {
-        role: 'bot',
-        text: 'Cara 1 - Datang ke KPP atau hubungi kanal resmi DJP untuk mendapatkan kembali EFIN.',
-        timestamp: '2025-01-15T10:30:33',
-        confidenceScore: 126,
-      },
-      { role: 'user', text: 'makasih', timestamp: '2025-01-15T10:34:12' },
-      { role: 'system', text: 'Sesi diakhiri - resolved', timestamp: '2025-01-15T10:35:00' },
-    ],
-  },
-  {
-    sessionId: 'web-1705311800000-b7k3',
-    channel: 'web',
-    status: 'active',
-    startedAt: '2025-01-15T09:16:00',
-    firstResponseTimeMs: 18000,
-    messages: [
-      { role: 'user', text: 'cara daftar npwp', timestamp: '2025-01-15T09:16:10' },
-      {
-        role: 'bot',
-        text: 'Saya bantu menjelaskan pendaftaran NPWP online.',
-        timestamp: '2025-01-15T09:16:28',
-        confidenceScore: 114,
-      },
-    ],
-  },
-  {
-    sessionId: 'wa-1705309000000-c9p4n',
-    channel: 'whatsapp',
-    status: 'resolved',
-    startedAt: '2025-01-14T14:12:00',
-    endedAt: '2025-01-14T14:20:00',
-    firstResponseTimeMs: 31000,
-    messages: [
-      { role: 'user', text: 'batas lapor spt kapan?', timestamp: '2025-01-14T14:12:00' },
-      {
-        role: 'bot',
-        text: 'SPT Tahunan Orang Pribadi dilaporkan paling lambat 31 Maret.',
-        timestamp: '2025-01-14T14:12:31',
-        confidenceScore: 132,
-      },
-    ],
-  },
-  {
-    sessionId: 'web-1705305000000-d1q5',
-    channel: 'web',
-    status: 'escalated',
-    startedAt: '2025-01-14T10:05:00',
-    firstResponseTimeMs: 46000,
-    messages: [
-      { role: 'user', text: 'saya butuh bicara dengan petugas', timestamp: '2025-01-14T10:05:00' },
-      { role: 'system', text: 'Permintaan diteruskan ke petugas.', timestamp: '2025-01-14T10:05:46' },
-    ],
-  },
-];
-
-const defaultUnmatchedItems = [
-  {
-    sessionId: 'web-1705312500000-new1',
-    channel: 'web',
-    timestamp: '2025-01-15T10:45:00',
-    lastMessages: ['berapa denda telat bayar ppn'],
-  },
-  {
-    sessionId: 'web-1705312000000-new2',
-    channel: 'web',
-    timestamp: '2025-01-15T10:32:00',
-    lastMessages: ['apakah bisa bayar pajak pakai shopeepay'],
-  },
-  {
-    sessionId: 'wa-1705311500000-new3',
-    channel: 'whatsapp',
-    timestamp: '2025-01-15T10:20:00',
-    lastMessages: ['saya pindah ke jakarta, npwpnya gimana'],
-  },
-];
+const defaultSessions = [];
+const defaultUnmatchedItems = [];
 
 const tabs = [
   { id: 'overview', label: '📊 Overview' },
@@ -232,7 +150,6 @@ function TemplatesTab({ initialQuery = '' }) {
   const [copied, setCopied] = useState(false);
   const [remoteTemplates, setRemoteTemplates] = useState(null);
 
-  // Sync initial query bila berubah dari navigasi luar
   useEffect(() => {
     if (initialQuery) {
       setQuery(initialQuery);
@@ -368,10 +285,12 @@ function TemplatesTab({ initialQuery = '' }) {
   );
 }
 
-// ── Tab 3: Chats ──
-function ChatsTab({ remoteSessions = [] }) {
-  const [status, setStatus] = useState('Semua Status');
+// ── Tab 3: Chats (Diperbarui untuk Helpdesk & Reply) ──
+function ChatsTab({ remoteSessions = [], onChatUpdated }) {
+  const [status, setStatus] = useState('active'); // Fokus utama petugas adalah status active
   const [selected, setSelected] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
   const sourceSessions = remoteSessions.length
     ? remoteSessions.map((session) => ({
@@ -392,89 +311,168 @@ function ChatsTab({ remoteSessions = [] }) {
       ? sourceSessions
       : sourceSessions.filter((session) => session.status === status);
 
+  // Update detail sesi jika ada data baru masuk dari props
+  useEffect(() => {
+    if (selected) {
+      const updatedSession = sourceSessions.find(s => s.sessionId === selected.sessionId);
+      if (updatedSession) setSelected(updatedSession);
+    }
+  }, [sourceSessions, selected]);
+
+  const handleSendReply = async () => {
+    if (!replyText.trim() || !selected) return;
+    setIsSending(true);
+
+    try {
+      // Menyisipkan pesan petugas ke Supabase
+      const { error } = await logChatMessage({
+        sessionId: selected.sessionId,
+        role: 'bot', // 'bot' di sini mewakili balasan sistem/petugas
+        text: replyText,
+        confidenceScore: null,
+        metadata: {
+          status: 'sent',
+          isTemplateUsed: false // Bisa dibuat true jika dikirim via template
+        }
+      });
+
+      if (error) throw error;
+      
+      setReplyText('');
+      // Memanggil fungsi fetchDashboard di komponen induk untuk me-refresh data
+      if (onChatUpdated) onChatUpdated(); 
+      
+    } catch (error) {
+      alert('Gagal mengirim balasan: ' + error.message);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleResolveSession = async () => {
+    if (!selected) return;
+    try {
+      await updateChatSession(selected.sessionId, { status: 'resolved', ended_at: new Date().toISOString() });
+      setSelected(null);
+      if (onChatUpdated) onChatUpdated();
+    } catch (err) {
+      alert('Gagal menyelesaikan sesi');
+    }
+  };
+
   return (
-    <div className="ad-chats-layout">
-      <div className="ad-session-column">
-        <div className="ad-chat-filter">
-          <select value={status} onChange={(event) => setStatus(event.target.value)}>
+    <div className="ad-chats-layout flex h-full">
+      <div className="ad-session-column w-1/3 border-r">
+        <div className="ad-chat-filter p-2">
+          <select value={status} onChange={(event) => setStatus(event.target.value)} className="w-full mb-2 p-1 border rounded">
+            <option value="active">Aktif (Butuh Balasan)</option>
+            <option value="escalated">Eskalasi</option>
+            <option value="resolved">Selesai</option>
             <option>Semua Status</option>
-            <option value="active">Aktif</option>
-            <option value="resolved">Resolved</option>
-            <option value="escalated">Escalated</option>
           </select>
           <strong>{filtered.length} sesi</strong>
         </div>
-        {filtered.map((session) => (
-          <button
-            className={`ad-session-item ${selected?.sessionId === session.sessionId ? 'selected' : ''}`}
-            key={session.sessionId}
-            onClick={() => setSelected(session)}
-          >
-            <span className={`ad-status st-${session.status}`}>{session.status}</span>
-            <small>{session.channel === 'web' ? '🌐 web' : '📱 whatsapp'}</small>
-            <code>{session.sessionId}</code>
-            <p>
-              {session.message_count || session.messages.length} pesan · {formatDate(session.startedAt)}
-            </p>
-          </button>
-        ))}
+        <div className="overflow-y-auto" style={{ maxHeight: '70vh' }}>
+          {filtered.map((session) => (
+            <button
+              className={`ad-session-item w-full text-left p-3 border-b hover:bg-gray-50 ${selected?.sessionId === session.sessionId ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}
+              key={session.sessionId}
+              onClick={() => setSelected(session)}
+            >
+              <div className="flex justify-between items-center">
+                <span className={`ad-status text-xs font-bold st-${session.status}`}>{session.status.toUpperCase()}</span>
+                <small className="text-gray-500">{session.channel === 'web' ? '🌐 Web' : '📱 WA'}</small>
+              </div>
+              <code className="block mt-1 text-sm">{session.sessionId}</code>
+              <p className="text-xs text-gray-500 mt-1">
+                {session.message_count || session.messages.length} pesan · {formatDate(session.startedAt)}
+              </p>
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="ad-detail-column">
+      <div className="ad-detail-column w-2/3 flex flex-col bg-white">
         {selected ? (
-          <div className="ad-detail">
-            <div className="ad-detail-head">
-              <h3>Detail Sesi</h3>
-              <button className="ad-ghost-btn" onClick={() => setSelected(null)}>
-                ✕ Tutup
-              </button>
-            </div>
-            <div className="ad-detail-meta">
+          <div className="ad-detail flex flex-col h-full relative">
+            <div className="ad-detail-head flex justify-between items-center p-4 border-b bg-gray-50">
               <div>
-                <b>Session:</b> <code>{selected.sessionId}</code>
+                <h3 className="font-bold text-lg">Sesi: {selected.sessionId}</h3>
+                <small className="text-gray-500">Mulai: {formatDate(selected.startedAt)}</small>
               </div>
-              <div>
-                <b>Kanal:</b> {selected.channel}
-              </div>
-              <div>
-                <b>Status:</b> <span className={`ad-status st-${selected.status}`}>{selected.status}</span>
-              </div>
-              <div>
-                <b>Mulai:</b> {formatDate(selected.startedAt)}
-              </div>
-              <div>
-                <b>Respons pertama:</b>{' '}
-                {selected.firstResponseTimeMs
-                  ? `${(selected.firstResponseTimeMs / 1000).toFixed(1)}s`
-                  : 'Belum ada'}
+              <div className="flex gap-2">
+                {selected.status === 'active' && (
+                  <button className="px-3 py-1 bg-green-100 text-green-700 rounded text-sm font-bold" onClick={handleResolveSession}>
+                    ✓ Tandai Selesai
+                  </button>
+                )}
+                <button className="px-3 py-1 text-gray-500 hover:bg-gray-200 rounded" onClick={() => setSelected(null)}>
+                  ✕
+                </button>
               </div>
             </div>
-            <div className="ad-detail-msgs">
-              {selected.messages.map((message, index) => (
-                <div
-                  className={`ad-dmsg ad-dmsg-${message.role}`}
-                  key={`${message.timestamp}-${index}`}
-                >
-                  <div>
-                    <strong>
-                      {message.role === 'user'
-                        ? '👤 Pengguna'
-                        : message.role === 'bot'
-                        ? '🤖 Bot'
-                        : '⚙️ Sistem'}
-                    </strong>
-                    <small>{new Date(message.timestamp).toLocaleTimeString('id-ID')}</small>
-                    {message.confidenceScore && <em>Skor: {message.confidenceScore}</em>}
+            
+            <div className="ad-detail-msgs flex-grow overflow-y-auto p-4 flex flex-col gap-3" style={{ maxHeight: '50vh' }}>
+              {selected.messages.map((message, index) => {
+                const isUser = message.role === 'user';
+                return (
+                  <div className={`flex flex-col max-w-[80%] ${isUser ? 'self-start' : 'self-end'}`} key={`${message.timestamp}-${index}`}>
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <strong className="text-xs text-gray-600">
+                        {isUser ? '👤 Wajib Pajak' : '🤖 Petugas / Bot'}
+                      </strong>
+                      <small className="text-[10px] text-gray-400">{new Date(message.created_at || message.timestamp).toLocaleTimeString('id-ID')}</small>
+                    </div>
+                    <div className={`p-3 rounded-lg ${isUser ? 'bg-gray-100 border' : 'bg-blue-600 text-white'}`}>
+                      <p className="whitespace-pre-wrap text-sm">{message.text}</p>
+                    </div>
                   </div>
-                  <p>{message.text}</p>
-                </div>
-              ))}
+                )
+              })}
             </div>
+
+            {selected.status !== 'resolved' && (
+              <div className="ad-reply-box p-4 border-t bg-gray-50 mt-auto">
+                <div className="mb-3 flex gap-2 overflow-x-auto">
+                  <span className="text-xs text-gray-500 font-bold py-1 whitespace-nowrap">SOP Cepat:</span>
+                  {responseTemplates.slice(0, 4).map(tpl => (
+                    <button 
+                      key={tpl.id}
+                      onClick={() => setReplyText(tpl.template)}
+                      className="text-xs bg-white border border-blue-200 text-blue-700 px-2 py-1 rounded hover:bg-blue-50 whitespace-nowrap"
+                    >
+                      {tpl.title}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <textarea 
+                    className="flex-grow p-3 border rounded-lg resize-none text-sm"
+                    rows="2"
+                    placeholder="Ketik balasan untuk Wajib Pajak..."
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    disabled={isSending}
+                  />
+                  <button 
+                    onClick={handleSendReply}
+                    disabled={isSending || !replyText.trim()}
+                    className={`px-6 rounded-lg font-bold transition-colors ${
+                      isSending || !replyText.trim() 
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    {isSending ? 'Mengirim...' : 'Kirim'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
-          <div className="ad-empty">
-            <span>💬</span>
-            <p>Pilih sesi untuk melihat percakapan.</p>
+          <div className="flex flex-col items-center justify-center h-full text-gray-400">
+            <span className="text-4xl mb-4">💬</span>
+            <p>Pilih antrean chat di sebelah kiri untuk mulai membalas.</p>
           </div>
         )}
       </div>
@@ -524,6 +522,8 @@ export default function AdminDashboard({ onBack }) {
   const fetchDashboard = useCallback(async () => {
     try {
       const data = await getDashboardStats(period);
+      // Opsional: Untuk ChatsTab, kita perlu memetakan relasi pesan ke dalam array `messages`
+      // jika getDashboardStats belum melakukan left join dari tabel chat_messages
       setStats(data);
     } catch (error) {
       console.warn('Dashboard memakai data simulasi:', error?.message);
@@ -532,8 +532,21 @@ export default function AdminDashboard({ onBack }) {
 
   useEffect(() => {
     fetchDashboard();
-    const channel = subscribeToNewChats(fetchDashboard);
-    return () => unsubscribe(channel);
+    
+    // Berlangganan sesi baru (Wajib Pajak baru menghubungi)
+    const sessionChannel = subscribeToNewChats(() => {
+      fetchDashboard();
+    });
+    
+    // Berlangganan pesan baru (Wajib Pajak mengirim balasan pada sesi aktif)
+    const messageChannel = subscribeToNewMessages(() => {
+      fetchDashboard(); 
+    });
+
+    return () => {
+      unsubscribe(sessionChannel);
+      unsubscribe(messageChannel);
+    };
   }, [fetchDashboard]);
 
   const handleCreateAnswer = (questionText) => {
@@ -554,7 +567,7 @@ export default function AdminDashboard({ onBack }) {
           <h1>Panel Admin</h1>
           <p>
             <span className="ad-live-dot" />{' '}
-            {stats ? 'Terhubung ke Supabase' : 'Simulasi · data lokal'}
+            {stats ? 'Terhubung ke Supabase (Real-time Aktif)' : 'Simulasi · data lokal'}
           </p>
         </div>
         <div className="ad-last-update">
@@ -585,7 +598,10 @@ export default function AdminDashboard({ onBack }) {
           <TemplatesTab initialQuery={templateQuery} />
         )}
         {activeTab === 'chats' && (
-          <ChatsTab remoteSessions={stats?.sessions} />
+          <ChatsTab 
+            remoteSessions={stats?.sessions} 
+            onChatUpdated={fetchDashboard} // Trigger refresh setelah petugas mengirim pesan
+          />
         )}
         {activeTab === 'unmatched' && (
           <UnmatchedTab
