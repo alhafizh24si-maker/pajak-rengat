@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Link, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
 import ChatWidget from "./components/chatbot/ChatWidget";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import logoDjp from "./assets/img/logo-djp-nonfix.jpeg";
@@ -181,9 +182,27 @@ function TaxPortal() {
             <a href="#faq" className="topbar-link">FAQ</a>
             <a href="#kontak" className="topbar-link">Kontak</a>
           </nav>
-          <Link to="/admin" className="topbar-link topbar-admin-btn" style={{ textDecoration: 'none' }}>
-            ⚙️ Panel Petugas
-          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Link to="/login" className="topbar-link topbar-admin-btn" style={{ textDecoration: 'none' }}>
+              ⚙️ Panel Petugas
+            </Link>
+            <Link to="/register" className="topbar-link topbar-reg-btn" style={{
+              textDecoration: 'none',
+              background: 'linear-gradient(135deg, rgba(255, 209, 0, 0.15) 0%, rgba(255, 209, 0, 0.25) 100%)',
+              color: '#FFD100',
+              border: '1px solid rgba(255, 209, 0, 0.45)',
+              padding: '6px 12px',
+              borderRadius: '6px',
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              transition: 'all 0.2s'
+            }}>
+              <span>📝</span> Register
+            </Link>
+          </div>
           <div className="status-badge"><span className="status-dot" /><span className="status-text">Online</span></div>
         </div>
       </header>
@@ -654,6 +673,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<TaxPortal />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route 
             path="/admin" 
             element={

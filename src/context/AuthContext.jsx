@@ -47,13 +47,48 @@ export const AuthProvider = ({ children }) => {
     return supabase.auth.signInWithPassword({ email, password });
   };
 
+  const signUp = async (email, password, metadata = {}) => {
+    if (!supabase) throw new Error('Supabase client belum dikonfigurasi.');
+    const response = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          ...metadata,
+          password: password,
+        },
+      },
+    });
+
+    // Upaya sinkronisasi ke tabel users_role jika tabel tersedia
+    if (response.data?.user?.id && !response.error) {
+      try {
+        const { error: roleErr } = await supabase.from('users_role').upsert({
+          id: response.data.user.id,
+          role: metadata.role || 'petugas',
+          nama: metadata.full_name || metadata.nama || email.split('@')[0],
+          nip: metadata.nip || '-',
+          password: password,
+        });
+        if (roleErr) {
+          console.warn('[AuthContext] Info sinkronisasi users_role:', roleErr.message);
+        }
+      } catch (err) {
+        // Abaikan jika tabel users_role belum dibuat atau RLS membatasi
+        console.warn('[AuthContext] Info sinkronisasi users_role:', err);
+      }
+    }
+
+    return response;
+  };
+
   const signOut = async () => {
     if (!supabase) return;
     return supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, user, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

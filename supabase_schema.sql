@@ -112,11 +112,62 @@ END $$;
 -- Tabel pembantu users_role (jika diperlukan untuk auth role)
 CREATE TABLE IF NOT EXISTS public.users_role (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    role TEXT NOT NULL DEFAULT 'admin',
+    role TEXT NOT NULL DEFAULT 'petugas',
     nama TEXT,
     nip TEXT,
     created_at TIMESTAMPTZ DEFAULT TIMEZONE('utc', NOW())
 );
+
+-- RLS untuk tabel users_role
+ALTER TABLE public.users_role ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow read users_role" ON public.users_role;
+CREATE POLICY "Allow read users_role"
+    ON public.users_role FOR SELECT
+    TO anon, authenticated
+    USING (true);
+
+DROP POLICY IF EXISTS "Allow insert/update users_role" ON public.users_role;
+CREATE POLICY "Allow insert/update users_role"
+    ON public.users_role FOR ALL
+    TO anon, authenticated
+    USING (true)
+    WITH CHECK (true);
+
+-- TRIGGER OTOMATIS: Setiap kali ada akun baru di auth.users, otomatis masuk ke public.users_role
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.users_role (id, role, nama, nip)
+    VALUES (
+        NEW.id,
+        COALESCE(NEW.raw_user_meta_data->>'role', 'petugas'),
+        COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
+        COALESCE(NEW.raw_user_meta_data->>'nip', '-')
+    )
+    ON CONFLICT (id) DO UPDATE
+    SET 
+        role = EXCLUDED.role,
+        nama = EXCLUDED.nama,
+        nip = EXCLUDED.nip;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- SINKRONISASI AKUN LAMA: Memasukkan akun yang sudah pernah mendaftar ke public.users_role
+INSERT INTO public.users_role (id, role, nama, nip)
+SELECT 
+    id,
+    COALESCE(raw_user_meta_data->>'role', 'petugas'),
+    COALESCE(raw_user_meta_data->>'full_name', split_part(email, '@', 1)),
+    COALESCE(raw_user_meta_data->>'nip', '-')
+FROM auth.users
+ON CONFLICT (id) DO NOTHING;
 
 
 -- ==============================================================================
