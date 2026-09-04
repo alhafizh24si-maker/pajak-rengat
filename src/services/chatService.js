@@ -33,7 +33,7 @@ const validateSessionId = (sessionId) => {
 };
 
 const validateRole = (role) => {
-  const validRoles = ['user', 'bot', 'system'];
+  const validRoles = ['user', 'bot', 'admin', 'system'];
   if (!validRoles.includes(role)) {
     return { isValid: false, error: `Role harus salah satu: ${validRoles.join(', ')}` };
   }
@@ -367,6 +367,23 @@ export function subscribeToNewChats(callback) {
 export function subscribeToNewMessages(callback) {
   if (!supabase) return null;
   return supabase.channel('public:chat_messages').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => callback(payload.new)).subscribe();
+}
+
+export function subscribeToSessionMessages(sessionId, callback) {
+  if (!supabase || !sessionId) return null;
+  return supabase
+    .channel(`session_msgs:${sessionId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'chat_messages',
+        filter: `session_id=eq.${sessionId}`,
+      },
+      (payload) => callback(payload.new)
+    )
+    .subscribe();
 }
 
 export function unsubscribe(channel) {

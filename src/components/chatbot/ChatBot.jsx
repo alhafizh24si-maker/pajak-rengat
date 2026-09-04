@@ -11,6 +11,8 @@ import {
   getChatSession,
   generateSessionId,
   createNotification,
+  subscribeToSessionMessages,
+  unsubscribe,
 } from '../../services/chatService';
 import {
   searchKnowledge,
@@ -39,6 +41,9 @@ Silakan ketik **angka menu** atau **pilih tombol** di bawah ini:
 const CONTEXT_TIMEOUT_MS = 5 * 60 * 1000;
 const WA_ADMIN_NUMBER = '628123456789'; // 💬 Ganti dengan nomor WhatsApp Helpdesk/Admin kamu
 
+const formatTime = (date) =>
+  (date instanceof Date ? date : new Date(date)).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
 const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
   const [messages, setMessages] = useState([]);
   const [options, setOptions] = useState([]);
@@ -59,6 +64,22 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
   const [noMatchCount, setNoMatchCount] = useState(0);
   const contextTimerRef = useRef(null);
   const sessionInitialized = useRef(false);
+
+  // ⚡ HELPER: Audio Notifikasi
+  const playNotificationSound = useCallback(() => {
+    if (document.visibilityState !== 'visible') {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        osc.frequency.value = 800;
+        osc.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.1);
+      } catch (e) {
+        console.error('AudioContext not supported');
+      }
+    }
+  }, []);
 
   // ⚡ HELPER: Pengarah ke WhatsApp
   const redirectToWhatsApp = useCallback((customMessage) => {
@@ -106,7 +127,7 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
       const newSessionId = generateSessionId();
       await createChatSession(newSessionId, {
         category: 'Lainnya',
-        source: 'web_widget',
+        source: 'web',
       });
       setSessionId(newSessionId);
       localStorage.setItem('kpp_rengat_session_id', newSessionId);
@@ -115,20 +136,40 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
     initSession();
   }, []);
 
-  const playNotificationSound = useCallback(() => {
-    if (document.visibilityState !== 'visible') {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        osc.frequency.value = 800;
-        osc.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.1);
-      } catch (e) {
-        console.error('AudioContext not supported');
+  // ⚡ REAL-TIME: Berlangganan pesan masuk dari Petugas KPP (Admin Dashboard)
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const channel = subscribeToSessionMessages(sessionId, (newMsg) => {
+      if (!newMsg || newMsg.role !== 'admin') return;
+
+      const incomingOfficerMsg = {
+        sender: 'PETUGAS',
+        text: newMsg.text,
+        timestamp: new Date(newMsg.created_at || Date.now()).getTime(),
+        timeString: formatTime(new Date(newMsg.created_at || Date.now())),
+      };
+
+      setMessages((prev) => {
+        // Cegah duplikasi pesan
+        const exists = prev.some(
+          (m) => m.text === incomingOfficerMsg.text && Math.abs((m.timestamp || 0) - incomingOfficerMsg.timestamp) < 2000
+        );
+        if (exists) return prev;
+        return [...prev, incomingOfficerMsg];
+      });
+
+      playNotificationSound();
+      if (document.visibilityState !== 'visible') {
+        document.title = '📩 Balasan Petugas KPP Pratama Rengat';
       }
-    }
-  }, []);
+      if (onNewBotMessage) onNewBotMessage();
+    });
+
+    return () => {
+      if (channel) unsubscribe(channel);
+    };
+  }, [sessionId, playNotificationSound, onNewBotMessage]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -220,9 +261,6 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
       window.removeEventListener('offline', handleOffline);
     };
   }, [pendingClicks]);
-
-  const formatTime = (date) =>
-    date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
   const addBotMessage = async (text, metadata = {}) => {
     const msg = { 

@@ -1,11 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import './admin.css';
 import { responseTemplates } from '../../data/templates';
 import {
   getDashboardStats,
   getTemplates,
+  getSessionMessages,
   subscribeToNewChats,
   subscribeToNewMessages,
+  subscribeToSessionMessages,
   unsubscribe,
   logChatMessage,
   updateChatSession
@@ -285,10 +289,13 @@ function TemplatesTab({ initialQuery = '' }) {
   );
 }
 
-// ── Tab 3: Chats (Diperbarui untuk Helpdesk & Reply) ──
+// ── Tab 3: Chats (Diperbarui untuk Omnichannel Helpdesk & Live Reply) ──
 function ChatsTab({ remoteSessions = [], onChatUpdated }) {
-  const [status, setStatus] = useState('active'); // Fokus utama petugas adalah status active
+  const [status, setStatus] = useState('active'); // active, escalated, resolved, Semua Status
+  const [channelFilter, setChannelFilter] = useState('all'); // all, web, whatsapp
   const [selected, setSelected] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [isSending, setIsSending] = useState(false);
 
@@ -296,20 +303,21 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
     ? remoteSessions.map((session) => ({
         ...session,
         sessionId: session.session_id || session.sessionId,
+        channel: session.channel || 'web',
         startedAt: session.started_at || session.startedAt,
         firstResponseTimeMs:
           session.first_response_ms ||
           session.first_response_time_ms ||
           session.firstResponseTimeMs ||
           0,
-        messages: session.messages || [],
       }))
     : defaultSessions;
 
-  const filtered =
-    status === 'Semua Status'
-      ? sourceSessions
-      : sourceSessions.filter((session) => session.status === status);
+  const filtered = sourceSessions.filter((session) => {
+    const matchStatus = status === 'Semua Status' || session.status === status;
+    const matchChannel = channelFilter === 'all' || session.channel === channelFilter;
+    return matchStatus && matchChannel;
+  });
 
   // Update detail sesi jika ada data baru masuk dari props
   useEffect(() => {
@@ -317,31 +325,69 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
       const updatedSession = sourceSessions.find(s => s.sessionId === selected.sessionId);
       if (updatedSession) setSelected(updatedSession);
     }
-  }, [sourceSessions, selected]);
+  }, [sourceSessions, selected?.sessionId]);
+
+  // Muat dan berlangganan pesan saat sesi dipilih
+  useEffect(() => {
+    if (!selected?.sessionId) {
+      setMessages([]);
+      return;
+    }
+
+    let isMounted = true;
+    setLoadingMessages(true);
+
+    // 1. Ambil riwayat pesan dari Supabase
+    getSessionMessages(selected.sessionId)
+      .then((data) => {
+        if (isMounted) {
+          setMessages(data || []);
+          setLoadingMessages(false);
+        }
+      })
+      .catch((err) => {
+        console.error('[ChatsTab] getSessionMessages error:', err);
+        if (isMounted) setLoadingMessages(false);
+      });
+
+    // 2. Berlangganan pesan baru secara real-time pada sesi ini
+    const channel = subscribeToSessionMessages(selected.sessionId, (newMsg) => {
+      if (!isMounted || !newMsg) return;
+      setMessages((prev) => {
+        const exists = prev.some((m) => m.id === newMsg.id);
+        if (exists) return prev;
+        return [...prev, newMsg];
+      });
+    });
+
+    return () => {
+      isMounted = false;
+      if (channel) unsubscribe(channel);
+    };
+  }, [selected?.sessionId]);
 
   const handleSendReply = async () => {
     if (!replyText.trim() || !selected) return;
     setIsSending(true);
 
     try {
-      // Menyisipkan pesan petugas ke Supabase
+      const isWa = selected.channel === 'whatsapp';
+      // Simpan balasan petugas ke tabel chat_messages
       const { error } = await logChatMessage({
         sessionId: selected.sessionId,
-        role: 'bot', // 'bot' di sini mewakili balasan sistem/petugas
-        text: replyText,
+        role: 'admin',
+        text: replyText.trim(),
         confidenceScore: null,
         metadata: {
-          status: 'sent',
-          isTemplateUsed: false // Bisa dibuat true jika dikirim via template
+          status: isWa ? 'pending_to_wa' : 'sent',
+          isTemplateUsed: false
         }
       });
 
       if (error) throw error;
       
       setReplyText('');
-      // Memanggil fungsi fetchDashboard di komponen induk untuk me-refresh data
       if (onChatUpdated) onChatUpdated(); 
-      
     } catch (error) {
       alert('Gagal mengirim balasan: ' + error.message);
     } finally {
@@ -356,123 +402,226 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
       setSelected(null);
       if (onChatUpdated) onChatUpdated();
     } catch (err) {
-      alert('Gagal menyelesaikan sesi');
+      alert('Gagal menyelesaikan sesi: ' + err.message);
     }
   };
 
   return (
     <div className="ad-chats-layout flex h-full">
+      {/* Kolom Daftar Antrean */}
       <div className="ad-session-column w-1/3 border-r">
         <div className="ad-chat-filter p-2">
-          <select value={status} onChange={(event) => setStatus(event.target.value)} className="w-full mb-2 p-1 border rounded">
+          {/* Filter Kanal */}
+          <div className="flex gap-1 mb-2">
+            <button 
+              onClick={() => setChannelFilter('all')}
+              className={`text-xs px-2 py-1 rounded flex-1 ${channelFilter === 'all' ? 'bg-blue-600 text-white font-bold' : 'bg-gray-100 text-gray-700'}`}
+            >
+              Semua
+            </button>
+            <button 
+              onClick={() => setChannelFilter('web')}
+              className={`text-xs px-2 py-1 rounded flex-1 ${channelFilter === 'web' ? 'bg-blue-600 text-white font-bold' : 'bg-gray-100 text-gray-700'}`}
+            >
+              🌐 Web
+            </button>
+            <button 
+              onClick={() => setChannelFilter('whatsapp')}
+              className={`text-xs px-2 py-1 rounded flex-1 ${channelFilter === 'whatsapp' ? 'bg-green-600 text-white font-bold' : 'bg-gray-100 text-gray-700'}`}
+            >
+              📱 WA
+            </button>
+          </div>
+
+          {/* Filter Status */}
+          <select value={status} onChange={(event) => setStatus(event.target.value)} className="w-full mb-2 p-1 border rounded text-sm">
             <option value="active">Aktif (Butuh Balasan)</option>
-            <option value="escalated">Eskalasi</option>
-            <option value="resolved">Selesai</option>
-            <option>Semua Status</option>
+            <option value="escalated">⚠️ Eskalasi (Petugas)</option>
+            <option value="resolved">✓ Selesai</option>
+            <option value="Semua Status">Semua Status</option>
           </select>
-          <strong>{filtered.length} sesi</strong>
+          <div className="flex justify-between items-center text-xs text-gray-500 px-1">
+            <span>Ditemukan: <strong>{filtered.length} sesi</strong></span>
+            {status === 'escalated' && <span className="text-amber-600 font-bold">Perlu Perhatian</span>}
+          </div>
         </div>
+
         <div className="overflow-y-auto" style={{ maxHeight: '70vh' }}>
           {filtered.map((session) => (
             <button
-              className={`ad-session-item w-full text-left p-3 border-b hover:bg-gray-50 ${selected?.sessionId === session.sessionId ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}
+              className={`ad-session-item w-full text-left p-3 border-b hover:bg-gray-50 transition-colors ${selected?.sessionId === session.sessionId ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}
               key={session.sessionId}
               onClick={() => setSelected(session)}
             >
               <div className="flex justify-between items-center">
                 <span className={`ad-status text-xs font-bold st-${session.status}`}>{session.status.toUpperCase()}</span>
-                <small className="text-gray-500">{session.channel === 'web' ? '🌐 Web' : '📱 WA'}</small>
+                <span className={`text-xs px-2 py-0.5 rounded font-medium ${session.channel === 'whatsapp' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                  {session.channel === 'whatsapp' ? '📱 WhatsApp' : '🌐 Web Widget'}
+                </span>
               </div>
-              <code className="block mt-1 text-sm">{session.sessionId}</code>
-              <p className="text-xs text-gray-500 mt-1">
-                {session.message_count || session.messages.length} pesan · {formatDate(session.startedAt)}
+              <code className="block mt-2 text-sm font-semibold text-gray-800 truncate" title={session.sessionId}>
+                {session.sessionId}
+              </code>
+              <p className="text-xs text-gray-500 mt-1 flex justify-between">
+                <span>{session.primary_category || 'Lainnya'}</span>
+                <span>{formatDate(session.startedAt)}</span>
               </p>
             </button>
           ))}
+          {filtered.length === 0 && (
+            <div className="p-6 text-center text-gray-400 text-xs">
+              Tidak ada sesi dengan filter ini.
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Kolom Detail & Balasan */}
       <div className="ad-detail-column w-2/3 flex flex-col bg-white">
         {selected ? (
           <div className="ad-detail flex flex-col h-full relative">
             <div className="ad-detail-head flex justify-between items-center p-4 border-b bg-gray-50">
               <div>
-                <h3 className="font-bold text-lg">Sesi: {selected.sessionId}</h3>
-                <small className="text-gray-500">Mulai: {formatDate(selected.startedAt)}</small>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-2 py-0.5 rounded font-bold ${selected.channel === 'whatsapp' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                    {selected.channel === 'whatsapp' ? '📱 WHATSAPP' : '🌐 WEB WIDGET'}
+                  </span>
+                  <h3 className="font-bold text-base text-gray-800 truncate max-w-sm">
+                    {selected.sessionId}
+                  </h3>
+                </div>
+                <small className="text-gray-500">Mulai: {formatDate(selected.startedAt)} · Kategori: {selected.primary_category || 'Umum'}</small>
               </div>
               <div className="flex gap-2">
-                {selected.status === 'active' && (
-                  <button className="px-3 py-1 bg-green-100 text-green-700 rounded text-sm font-bold" onClick={handleResolveSession}>
+                {selected.status !== 'resolved' && (
+                  <button 
+                    className="px-3 py-1 bg-green-600 text-white hover:bg-green-700 rounded text-xs font-bold transition-colors" 
+                    onClick={handleResolveSession}
+                  >
                     ✓ Tandai Selesai
                   </button>
                 )}
-                <button className="px-3 py-1 text-gray-500 hover:bg-gray-200 rounded" onClick={() => setSelected(null)}>
+                <button className="px-3 py-1 text-gray-500 hover:bg-gray-200 rounded text-sm" onClick={() => setSelected(null)}>
                   ✕
                 </button>
               </div>
             </div>
             
-            <div className="ad-detail-msgs flex-grow overflow-y-auto p-4 flex flex-col gap-3" style={{ maxHeight: '50vh' }}>
-              {selected.messages.map((message, index) => {
-                const isUser = message.role === 'user';
-                return (
-                  <div className={`flex flex-col max-w-[80%] ${isUser ? 'self-start' : 'self-end'}`} key={`${message.timestamp}-${index}`}>
-                    <div className="flex items-baseline gap-2 mb-1">
-                      <strong className="text-xs text-gray-600">
-                        {isUser ? '👤 Wajib Pajak' : '🤖 Petugas / Bot'}
-                      </strong>
-                      <small className="text-[10px] text-gray-400">{new Date(message.created_at || message.timestamp).toLocaleTimeString('id-ID')}</small>
+            {/* Riwayat Obrolan Live */}
+            <div className="ad-detail-msgs flex-grow overflow-y-auto p-4 flex flex-col gap-3" style={{ maxHeight: '52vh' }}>
+              {loadingMessages ? (
+                <div className="text-center py-8 text-gray-400 text-sm">
+                  Memuat percakapan...
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="text-center py-8 text-gray-400 text-sm">
+                  Belum ada pesan tercatat pada sesi ini.
+                </div>
+              ) : (
+                messages.map((message, index) => {
+                  const isUser = message.role === 'user';
+                  const isOfficer = message.role === 'admin';
+                  const isBot = message.role === 'bot';
+
+                  return (
+                    <div 
+                      className={`flex flex-col max-w-[82%] ${isUser ? 'self-start' : 'self-end'}`} 
+                      key={message.id || `${message.created_at}-${index}`}
+                    >
+                      <div className={`flex items-baseline gap-2 mb-1 ${isUser ? 'self-start' : 'self-end'}`}>
+                        <strong className="text-xs text-gray-600">
+                          {isUser ? '👤 Wajib Pajak' : isOfficer ? '👮 Petugas (Anda)' : '🤖 Bot Otomatis'}
+                        </strong>
+                        <small className="text-[10px] text-gray-400">
+                          {new Date(message.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                        </small>
+                        {isOfficer && selected.channel === 'whatsapp' && (
+                          <span className="text-[10px] text-green-600" title={message.message_status}>
+                            {message.message_status === 'sent_to_wa' ? '✓✓ Terkirim ke WA' : '⏳ Terkirim ke DB'}
+                          </span>
+                        )}
+                      </div>
+                      <div className={`p-3 rounded-xl text-sm ${
+                        isUser 
+                          ? 'bg-gray-100 text-gray-800 border' 
+                          : isOfficer
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'bg-emerald-50 text-emerald-950 border border-emerald-200'
+                      }`}>
+                        <p className="whitespace-pre-wrap m-0 leading-relaxed">{message.text}</p>
+                      </div>
                     </div>
-                    <div className={`p-3 rounded-lg ${isUser ? 'bg-gray-100 border' : 'bg-blue-600 text-white'}`}>
-                      <p className="whitespace-pre-wrap text-sm">{message.text}</p>
-                    </div>
-                  </div>
-                )
-              })}
+                  );
+                })
+              )}
             </div>
 
-            {selected.status !== 'resolved' && (
-              <div className="ad-reply-box p-4 border-t bg-gray-50 mt-auto">
-                <div className="mb-3 flex gap-2 overflow-x-auto">
-                  <span className="text-xs text-gray-500 font-bold py-1 whitespace-nowrap">SOP Cepat:</span>
-                  {responseTemplates.slice(0, 4).map(tpl => (
+            {/* Kotak Balasan Petugas */}
+            {selected.status !== 'resolved' ? (
+              <div className="ad-reply-box p-3 border-t bg-gray-50 mt-auto">
+                {/* SOP Cepat */}
+                <div className="mb-2 flex items-center gap-2 overflow-x-auto pb-1">
+                  <span className="text-[11px] text-gray-500 font-bold whitespace-nowrap">SOP Cepat:</span>
+                  {responseTemplates.slice(0, 5).map(tpl => (
                     <button 
                       key={tpl.id}
                       onClick={() => setReplyText(tpl.template)}
-                      className="text-xs bg-white border border-blue-200 text-blue-700 px-2 py-1 rounded hover:bg-blue-50 whitespace-nowrap"
+                      className="text-xs bg-white border border-blue-200 text-blue-700 px-2 py-1 rounded hover:bg-blue-50 whitespace-nowrap shadow-xs"
+                      title={tpl.template}
                     >
                       {tpl.title}
                     </button>
                   ))}
                 </div>
+
                 <div className="flex gap-2">
                   <textarea 
-                    className="flex-grow p-3 border rounded-lg resize-none text-sm"
+                    className="flex-grow p-2.5 border rounded-lg resize-none text-sm focus:outline-blue-500 focus:bg-white bg-white"
                     rows="2"
-                    placeholder="Ketik balasan untuk Wajib Pajak..."
+                    placeholder={`Ketik balasan untuk Wajib Pajak (${selected.channel === 'whatsapp' ? 'Pesan akan ditembakkan ke WhatsApp Wajib Pajak' : 'Akan muncul langsung di Web Widget'})...`}
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     disabled={isSending}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendReply();
+                      }
+                    }}
                   />
                   <button 
                     onClick={handleSendReply}
                     disabled={isSending || !replyText.trim()}
-                    className={`px-6 rounded-lg font-bold transition-colors ${
+                    className={`px-5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-1 ${
                       isSending || !replyText.trim() 
                         ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                        : selected.channel === 'whatsapp'
+                        ? 'bg-green-600 text-white hover:bg-green-700 shadow-sm'
+                        : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
                     }`}
                   >
-                    {isSending ? 'Mengirim...' : 'Kirim'}
+                    {isSending ? (
+                      'Mengirim...'
+                    ) : (
+                      <>
+                        <span>Kirim</span>
+                        <span className="text-xs">{selected.channel === 'whatsapp' ? '📱' : '🚀'}</span>
+                      </>
+                    )}
                   </button>
                 </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-gray-100 text-center text-xs text-gray-500 border-t">
+                Sesi ini telah diselesaikan (Resolved). Ubah status jika ingin membuka kembali.
               </div>
             )}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400">
-            <span className="text-4xl mb-4">💬</span>
-            <p>Pilih antrean chat di sebelah kiri untuk mulai membalas.</p>
+          <div className="flex flex-col items-center justify-center h-full text-gray-400 p-8 text-center">
+            <span className="text-5xl mb-3">💬</span>
+            <strong className="text-gray-700 text-base mb-1">Omnichannel Helpdesk Inbox</strong>
+            <p className="max-w-xs text-sm">Pilih salah satu antrean chat (🌐 Web atau 📱 WhatsApp) di sebelah kiri untuk membaca dan membalas secara langsung.</p>
           </div>
         )}
       </div>
@@ -514,16 +663,32 @@ function UnmatchedTab({ items = defaultUnmatchedItems, onCreateAnswer }) {
 
 // ── Main Dashboard Component ──
 export default function AdminDashboard({ onBack }) {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
   const [activeTab, setActiveTab] = useState('overview');
   const [period, setPeriod] = useState('30');
   const [stats, setStats] = useState(null);
   const [templateQuery, setTemplateQuery] = useState('');
 
+  const handleSignOut = async () => {
+    if (window.confirm('Apakah Anda yakin ingin keluar dari panel admin?')) {
+      await signOut();
+      navigate('/login');
+    }
+  };
+
+  const handleGoBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate('/');
+    }
+  };
+
   const fetchDashboard = useCallback(async () => {
     try {
       const data = await getDashboardStats(period);
-      // Opsional: Untuk ChatsTab, kita perlu memetakan relasi pesan ke dalam array `messages`
-      // jika getDashboardStats belum melakukan left join dari tabel chat_messages
       setStats(data);
     } catch (error) {
       console.warn('Dashboard memakai data simulasi:', error?.message);
@@ -559,21 +724,42 @@ export default function AdminDashboard({ onBack }) {
   return (
     <div className="admin-dashboard">
       <header className="ad-header">
-        <button className="ad-back-btn" onClick={onBack}>
-          ← Kembali
+        <button className="ad-back-btn" onClick={handleGoBack}>
+          ← Portal Publik
         </button>
         <div>
-          <span className="ad-kicker">INTERNAL TOOL</span>
-          <h1>Panel Admin</h1>
+          <span className="ad-kicker">INTERNAL TOOL · HELPDESK TERPADU</span>
+          <h1>Panel Admin KPP Pratama Rengat</h1>
           <p>
             <span className="ad-live-dot" />{' '}
             {stats ? 'Terhubung ke Supabase (Real-time Aktif)' : 'Simulasi · data lokal'}
           </p>
         </div>
-        <div className="ad-last-update">
-          Update terakhir
-          <br />
-          <strong>{new Date().toLocaleTimeString('id-ID')}</strong>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginLeft: 'auto' }}>
+          <div className="ad-last-update">
+            Petugas: <strong>{user?.email || 'Admin DJP'}</strong>
+            <br />
+            <small>Update: {new Date().toLocaleTimeString('id-ID')}</small>
+          </div>
+          <button 
+            onClick={handleSignOut}
+            style={{
+              background: 'rgba(220, 53, 69, 0.1)',
+              border: '1px solid rgba(220, 53, 69, 0.3)',
+              color: '#DC3545',
+              padding: '8px 14px',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="Keluar dari sistem"
+          >
+            🚪 Keluar
+          </button>
         </div>
       </header>
 

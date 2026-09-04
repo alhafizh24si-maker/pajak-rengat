@@ -1,16 +1,32 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { BrowserRouter, Routes, Route, Link, Navigate } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import Login from "./components/auth/Login";
 import ChatWidget from "./components/chatbot/ChatWidget";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import logoDjp from "./assets/img/logo-djp-nonfix.jpeg";
 
-function App() {
-  const [view, setView] = useState('user');
+function TaxPortal() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [highlightedServiceId, setHighlightedServiceId] = useState(null);
+  const searchContainerRef = useRef(null);
   const [activeTab, setActiveTab] = useState('semua');
   const [openFaq, setOpenFaq] = useState(null);
   const [activeNewsTab, setActiveNewsTab] = useState('pengumuman');
   const [showScamModal, setShowScamModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
+        setIsSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 80);
@@ -101,9 +117,50 @@ function App() {
     return matchCategory && matchSearch;
   });
 
-  const toggleFaq = (index) => setOpenFaq(openFaq === index ? null : index);
+  const matchedServices = services.filter((s) => {
+    if (!searchTerm.trim()) return false;
+    const term = searchTerm.toLowerCase();
+    return s.title.toLowerCase().includes(term) || s.desc.toLowerCase().includes(term) || s.category.toLowerCase().includes(term);
+  });
 
-  if (view === 'admin') return <AdminDashboard onBack={() => setView('user')} />;
+  const matchedFaqs = faqs.map((f, i) => ({ ...f, index: i })).filter((f) => {
+    if (!searchTerm.trim()) return false;
+    const term = searchTerm.toLowerCase();
+    return f.q.toLowerCase().includes(term) || f.a.toLowerCase().includes(term);
+  });
+
+  const handleSearchSubmit = (e) => {
+    if (e) e.preventDefault();
+    setIsSearchOpen(false);
+    const elem = document.getElementById('layanan');
+    if (elem) {
+      elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handleSelectService = (serviceId) => {
+    setIsSearchOpen(false);
+    setActiveTab('semua');
+    setHighlightedServiceId(serviceId);
+    const elem = document.getElementById('layanan');
+    if (elem) {
+      elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    setTimeout(() => {
+      setHighlightedServiceId(null);
+    }, 3000);
+  };
+
+  const handleSelectFaq = (faqIndex) => {
+    setIsSearchOpen(false);
+    setOpenFaq(faqIndex);
+    const elem = document.getElementById('faq');
+    if (elem) {
+      elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const toggleFaq = (index) => setOpenFaq(openFaq === index ? null : index);
 
   return (
     <div className="app-shell">
@@ -124,7 +181,9 @@ function App() {
             <a href="#faq" className="topbar-link">FAQ</a>
             <a href="#kontak" className="topbar-link">Kontak</a>
           </nav>
-          <button className="topbar-link topbar-admin-btn" onClick={() => setView('admin')}>⚙️ Panel Admin</button>
+          <Link to="/admin" className="topbar-link topbar-admin-btn" style={{ textDecoration: 'none' }}>
+            ⚙️ Panel Petugas
+          </Link>
           <div className="status-badge"><span className="status-dot" /><span className="status-text">Online</span></div>
         </div>
       </header>
@@ -152,11 +211,129 @@ function App() {
             <p className="welcome-description">
               Dapatkan bantuan seputar pendaftaran NPWP, pelaporan SPT, pemulihan EFIN, dan konsultasi perpajakan secara cepat melalui interaksi cerdas terpadu.
             </p>
-            <div className="search-box-container">
-              <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-              <input type="text" placeholder="Cari layanan (misal: EFIN, NPWP, SPT)..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="search-input" />
-              {searchTerm && <button className="search-clear-btn" onClick={() => setSearchTerm('')}>&times;</button>}
-            </div>
+            <form onSubmit={handleSearchSubmit} className="search-box-container" ref={searchContainerRef}>
+              <svg 
+                className="search-icon" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="#FFC700" 
+                strokeWidth="2.5" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input 
+                type="text" 
+                placeholder="Cari layanan (misal: EFIN, NPWP, SPT)..." 
+                value={searchTerm} 
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setIsSearchOpen(true);
+                }} 
+                onFocus={() => setIsSearchOpen(true)}
+                className="search-input" 
+                aria-label="Cari layanan perpajakan"
+              />
+              {searchTerm && (
+                <button 
+                  type="button" 
+                  className="search-clear-btn" 
+                  onClick={() => { setSearchTerm(''); setIsSearchOpen(false); }}
+                  aria-label="Hapus teks pencarian"
+                >
+                  &times;
+                </button>
+              )}
+              <button type="submit" className="search-btn-submit">
+                Cari
+              </button>
+
+              {/* Dropdown Live Search Suggestions */}
+              {isSearchOpen && searchTerm.trim().length > 0 && (
+                <div className="search-dropdown-menu">
+                  <div className="search-dropdown-header">
+                    <span>Hasil Pencarian Cepat</span>
+                    <strong>{matchedServices.length + matchedFaqs.length} Ditemukan</strong>
+                  </div>
+
+                  {matchedServices.length > 0 && (
+                    <>
+                      <div className="search-dropdown-section-title">Layanan Perpajakan</div>
+                      {matchedServices.slice(0, 4).map((s) => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          className="search-dropdown-item"
+                          onClick={() => handleSelectService(s.id)}
+                        >
+                          <span className="search-item-icon">{s.icon}</span>
+                          <div className="search-item-info">
+                            <div className="search-item-title">
+                              <span>{s.title}</span>
+                              <span className="search-item-badge">{s.category}</span>
+                            </div>
+                            <div className="search-item-desc">{s.desc}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </>
+                  )}
+
+                  {matchedFaqs.length > 0 && (
+                    <>
+                      <div className="search-dropdown-section-title">Pertanyaan (FAQ)</div>
+                      {matchedFaqs.slice(0, 3).map((f) => (
+                        <button
+                          key={f.index}
+                          type="button"
+                          className="search-dropdown-item"
+                          onClick={() => handleSelectFaq(f.index)}
+                        >
+                          <span className="search-item-icon">❓</span>
+                          <div className="search-item-info">
+                            <div className="search-item-title">{f.q}</div>
+                            <div className="search-item-desc">{f.a}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </>
+                  )}
+
+                  {matchedServices.length === 0 && matchedFaqs.length === 0 && (
+                    <div style={{ padding: '16px 8px', textAlign: 'center' }}>
+                      <p style={{ fontSize: '13px', color: '#94A3B8', marginBottom: '8px' }}>
+                        Tidak ditemukan layanan atau FAQ yang cocok dengan "{searchTerm}".
+                      </p>
+                      <div style={{ fontSize: '11px', color: '#CBD5E1', marginBottom: '6px' }}>
+                        Coba kata kunci populer:
+                      </div>
+                      <div className="search-chips-container" style={{ justifyContent: 'center' }}>
+                        {['EFIN', 'NPWP', 'SPT', 'e-Billing', 'Coretax'].map((chip) => (
+                          <span 
+                            key={chip} 
+                            className="search-chip" 
+                            onClick={() => { setSearchTerm(chip); setIsSearchOpen(true); }}
+                          >
+                            {chip}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {(matchedServices.length > 0 || matchedFaqs.length > 0) && (
+                    <div className="search-dropdown-footer">
+                      <button type="submit" className="search-see-all-btn">
+                        Lihat Semua Hasil di Katalog Layanan (Enter) ↓
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </form>
             <div className="welcome-actions">
               <button className="btn-primary-hero" onClick={() => document.getElementById('layanan')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>Jelajahi Layanan</button>
               <button className="btn-outline-hero" onClick={() => document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>Lihat FAQ</button>
@@ -259,9 +436,29 @@ function App() {
               ))}
             </div>
           </div>
+
+          {searchTerm && (
+            <div className="search-active-banner">
+              <span>
+                🔍 Menampilkan hasil pencarian untuk: <strong>"{searchTerm}"</strong> ({filteredServices.length} layanan ditemukan)
+              </span>
+              <button 
+                type="button" 
+                onClick={() => setSearchTerm('')} 
+                className="search-reset-tag"
+              >
+                Reset Pencarian ✕
+              </button>
+            </div>
+          )}
+
           <div className="service-grid">
             {filteredServices.length > 0 ? filteredServices.map((item) => (
-              <article key={item.id} className="service-item interactive-card service-item-with-img">
+              <article 
+                key={item.id} 
+                id={`service-${item.id}`}
+                className={`service-item interactive-card service-item-with-img ${highlightedServiceId === item.id ? 'highlighted-service-pulse' : ''}`}
+              >
                 <div className="service-card-img"><img src={item.img} alt={item.title} loading="lazy" /><span className="service-card-img-badge">{item.icon} {item.code}</span></div>
                 <div className="service-card-body">
                   <div className="service-header"><span className="service-badge-tag">{item.category}</span></div>
@@ -450,4 +647,24 @@ function App() {
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<TaxPortal />} />
+          <Route path="/login" element={<Login />} />
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}

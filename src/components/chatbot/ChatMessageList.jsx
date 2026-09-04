@@ -47,7 +47,9 @@ const ChatMessageList = ({ messages, isTyping, isOffline, hasError, onRetry }) =
 
       {messages.map((msg, idx) => {
         const isBot = msg.sender === 'BOT';
-        const isLastBotMessage = isBot && idx === lastBotIdx;
+        const isOfficer = msg.sender === 'ADMIN' || msg.sender === 'PETUGAS';
+        const isIncoming = isBot || isOfficer;
+        const isLastBotMessage = isIncoming && idx === lastBotIdx;
         const msgAge = now - (msg.timestamp || 0);
         const showReadReceipt = isLastBotMessage && (msgAge > 2000); 
 
@@ -55,34 +57,51 @@ const ChatMessageList = ({ messages, isTyping, isOffline, hasError, onRetry }) =
           <div key={idx} style={{
             display: 'flex',
             flexDirection: 'column',
-            alignItems: isBot ? 'flex-start' : 'flex-end',
+            alignItems: isIncoming ? 'flex-start' : 'flex-end',
             maxWidth: '100%',
             marginBottom: '4px'
           }}>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', maxWidth: '85%' }}>
-              {isBot && (
+              {isIncoming && (
                 <div style={{ 
                   minWidth: '24px', height: '24px', borderRadius: '50%', 
-                  background: 'linear-gradient(135deg, #0056B3, #002B49)', 
+                  background: isOfficer 
+                    ? 'linear-gradient(135deg, #059669, #047857)' 
+                    : 'linear-gradient(135deg, #0056B3, #002B49)', 
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '12px', color: '#FFF', boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                   marginBottom: '16px'
-                }}>✨</div>
+                }} title={isOfficer ? 'Petugas KPP' : 'AI Assistant'}>
+                  {isOfficer ? '👮' : '✨'}
+                </div>
               )}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: isBot ? 'flex-start' : 'flex-end' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: isIncoming ? 'flex-start' : 'flex-end' }}>
+                {isOfficer && (
+                  <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#059669', marginBottom: '3px' }}>
+                    Petugas KPP Pratama Rengat
+                  </span>
+                )}
                 <div style={{
                   padding: '12px 16px',
-                  borderRadius: isBot ? '16px 16px 16px 4px' : '16px 16px 4px 16px',
-                  background: isBot ? '#FFFFFF' : 'linear-gradient(135deg, #0056B3, #003d82)',
-                  color: isBot ? '#1F2937' : '#FFFFFF',
+                  borderRadius: isIncoming ? '16px 16px 16px 4px' : '16px 16px 4px 16px',
+                  background: isOfficer 
+                    ? '#F0FDF4' 
+                    : isBot 
+                    ? '#FFFFFF' 
+                    : 'linear-gradient(135deg, #0056B3, #003d82)',
+                  color: isIncoming ? '#1F2937' : '#FFFFFF',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
                   fontSize: '14px',
                   lineHeight: '1.5',
                   wordBreak: 'break-word',
                   whiteSpace: 'pre-line',
-                  border: isBot ? '1px solid rgba(0,0,0,0.05)' : 'none'
+                  border: isOfficer 
+                    ? '1px solid #BBF7D0' 
+                    : isBot 
+                    ? '1px solid rgba(0,0,0,0.05)' 
+                    : 'none'
                 }}>
-                  {isBot ? (
+                  {isIncoming ? (
                     <div className="markdown-content">
                       <ReactMarkdown>{msg.text}</ReactMarkdown>
                     </div>
@@ -100,7 +119,7 @@ const ChatMessageList = ({ messages, isTyping, isOffline, hasError, onRetry }) =
                   gap: '4px'
                 }}>
                   {msg.timeString || '12:00'}
-                  {isBot && showReadReceipt && (
+                  {isIncoming && showReadReceipt && (
                     <span style={{ color: '#3b82f6', fontSize: '12px', fontWeight: 'bold' }}>✓✓</span>
                   )}
                 </div>

@@ -1,0 +1,26 @@
+{
+  "name": "kpp-rengat-whatsapp-engine",
+  "version": "1.0.0",
+  "description": "WhatsApp Bot & Supabase Realtime Omnichannel Relay Engine for KPP Pratama Rengat",
+  "main": "src/bot.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/bot.js",
+    "dev": "node --watch src/bot.js"
+  },
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "supabase",
+    "helpdesk",
+    "kpp-rengat"
+  ],
+  "author": "KPP Pratama Rengat",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "dotenv": "^16.4.7",
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.26.0"
+  }
+}
