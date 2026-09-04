@@ -60,9 +60,29 @@ html,
 }
 
 /* ========================================
+   HEADER TOPBAR WRAPPER
+   ======================================== */
+.topbar-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  transition: padding 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.topbar-wrapper.topbar-wrapper-scrolled {
+  padding-top: 10px;
+}
+
+/* ========================================
    HEADER TOPBAR — NORMAL
    ======================================== */
 .topbar {
+  pointer-events: auto;
   background-color: var(--djp-blue-dark);
   color: #FFFFFF;
   padding: 14px 40px;
@@ -71,38 +91,37 @@ html,
   align-items: center;
   border-bottom: 4px solid var(--djp-yellow);
   box-shadow: 0 4px 16px rgba(10, 37, 64, 0.2);
-  position: sticky;
-  top: 0;
-  z-index: 100;
   width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
   transition:
     padding 0.35s cubic-bezier(0.4, 0, 0.2, 1),
     background-color 0.35s ease,
     border-bottom 0.35s ease,
     border-radius 0.35s ease,
     box-shadow 0.35s ease,
-    margin 0.35s ease;
+    width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ========================================
    HEADER — BUBBLE (scroll > 80px)
    ======================================== */
 .topbar-bubble {
-  padding: 8px 32px;
-  background-color: rgba(10, 37, 64, 0.92);
+  padding: 10px 32px;
+  background-color: rgba(10, 37, 64, 0.94);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-bottom: 3px solid var(--djp-yellow);
-  border-radius: 0 0 20px 20px;
+  border-radius: 18px;
   box-shadow:
-    0 8px 32px rgba(10, 37, 64, 0.35),
-    0 2px 8px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  margin: 0 24px;
+    0 12px 36px rgba(0, 0, 0, 0.35),
+    0 2px 10px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  margin: 0 auto;
   width: calc(100% - 48px);
-  max-width: 1072px;
-  left: 50%;
-  transform: translateX(-50%);
+  max-width: 1200px;
 }
 
 .topbar-bubble .brand-logo-img { height: 30px; padding: 2px 6px; }
@@ -846,6 +865,37 @@ html,
 .ops-address p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
 .address-main { font-weight: 700; color: var(--djp-blue-dark) !important; margin-bottom: 2px; }
 .address-postal { color: var(--text-light) !important; font-size: 12px !important; margin-top: 4px; }
+.map-embed-container {
+  margin-top: 14px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background-color: var(--border-light);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+.map-embed-container iframe {
+  width: 100%;
+  height: 160px;
+  border: none;
+  display: block;
+}
+.map-open-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  background-color: #FFFFFF;
+  border-top: 1px solid var(--border-light);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--djp-blue-primary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+.map-open-link:hover {
+  background-color: var(--blue-soft);
+  color: var(--djp-blue-dark);
+}
 .map-fake { background-color: var(--border-light); border: 1px dashed var(--border-color); border-radius: var(--radius-sm); padding: 14px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all var(--transition-fast); text-decoration: none; margin-top: 16px; }
 .map-fake:hover { background-color: var(--blue-soft); border-color: var(--djp-blue-light); border-style: solid; }
 .map-fake span { font-size: 20px; }
@@ -917,7 +967,7 @@ html,
   .news-grid { grid-template-columns: repeat(2, 1fr); }
   .ops-grid { grid-template-columns: repeat(2, 1fr); }
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
-  .topbar-bubble { margin: 0 16px; width: calc(100% - 32px); }
+  .topbar-bubble { margin: 0 auto; width: calc(100% - 32px); }
 }
 
 /* ========================================
@@ -979,7 +1029,7 @@ html,
   .modal-scam { border-radius: var(--radius-lg); }
   .modal-scam-header { padding: 16px 18px; }
   .modal-scam-body { padding: 18px; }
-  .topbar-bubble { margin: 0 8px; width: calc(100% - 16px); padding: 6px 14px; border-radius: 0 0 14px 14px; }
+  .topbar-bubble { margin: 0 auto; width: calc(100% - 16px); padding: 6px 14px; border-radius: 12px; }
   .topbar-bubble .brand-logo-img { height: 24px; padding: 2px 4px; }
   .topbar-bubble .brand-divider { height: 16px; }
   .topbar-bubble .brand-kicker { display: none; }

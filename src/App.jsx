@@ -7,6 +7,7 @@ import Register from "./components/auth/Register";
 import ChatWidget from "./components/chatbot/ChatWidget";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import logoDjp from "./assets/img/logo-djp-nonfix.jpeg";
+import kppRengatImg from "./assets/img/KPP Pratama Rengat.jpg";
 
 function TaxPortal() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -166,46 +167,48 @@ function TaxPortal() {
   return (
     <div className="app-shell">
       {/* ═══ HEADER ═══ */}
-      <header className={`topbar ${isScrolled ? 'topbar-bubble' : ''}`}>
-        <div className="brand-lockup">
-          <img src={logoDjp} alt="Logo DJP" className="brand-logo-img" />
-          <div className="brand-divider" />
-          <div className="brand-text">
-            <span className="brand-kicker">Direktorat Jenderal Pajak</span>
-            <strong>KPP Pratama Rengat</strong>
+      <div className={`topbar-wrapper ${isScrolled ? 'topbar-wrapper-scrolled' : ''}`}>
+        <header className={`topbar ${isScrolled ? 'topbar-bubble' : ''}`}>
+          <div className="brand-lockup">
+            <img src={logoDjp} alt="Logo DJP" className="brand-logo-img" />
+            <div className="brand-divider" />
+            <div className="brand-text">
+              <span className="brand-kicker">Direktorat Jenderal Pajak</span>
+              <strong>KPP Pratama Rengat</strong>
+            </div>
           </div>
-        </div>
-        <div className="topbar-right">
-          <nav className="topbar-nav">
-            <a href="#layanan" className="topbar-link">Layanan</a>
-            <a href="#informasi" className="topbar-link">Informasi</a>
-            <a href="#faq" className="topbar-link">FAQ</a>
-            <a href="#kontak" className="topbar-link">Kontak</a>
-          </nav>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Link to="/login" className="topbar-link topbar-admin-btn" style={{ textDecoration: 'none' }}>
-              ⚙️ Panel Petugas
-            </Link>
-            <Link to="/register" className="topbar-link topbar-reg-btn" style={{
-              textDecoration: 'none',
-              background: 'linear-gradient(135deg, rgba(255, 209, 0, 0.15) 0%, rgba(255, 209, 0, 0.25) 100%)',
-              color: '#FFD100',
-              border: '1px solid rgba(255, 209, 0, 0.45)',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              transition: 'all 0.2s'
-            }}>
-              <span>📝</span> Register
-            </Link>
+          <div className="topbar-right">
+            <nav className="topbar-nav">
+              <a href="#layanan" className="topbar-link">Layanan</a>
+              <a href="#informasi" className="topbar-link">Informasi</a>
+              <a href="#faq" className="topbar-link">FAQ</a>
+              <a href="#kontak" className="topbar-link">Kontak</a>
+            </nav>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Link to="/login" className="topbar-link topbar-admin-btn" style={{ textDecoration: 'none' }}>
+                ⚙️ Panel Petugas
+              </Link>
+              <Link to="/register" className="topbar-link topbar-reg-btn" style={{
+                textDecoration: 'none',
+                background: 'linear-gradient(135deg, rgba(255, 209, 0, 0.15) 0%, rgba(255, 209, 0, 0.25) 100%)',
+                color: '#FFD100',
+                border: '1px solid rgba(255, 209, 0, 0.45)',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                transition: 'all 0.2s'
+              }}>
+                <span>📝</span> Register
+              </Link>
+            </div>
+            <div className="status-badge"><span className="status-dot" /><span className="status-text">Online</span></div>
           </div>
-          <div className="status-badge"><span className="status-dot" /><span className="status-text">Online</span></div>
-        </div>
-      </header>
+        </header>
+      </div>
 
       {/* ═══ MARQUEE ═══ */}
       <div className={`marquee-bar ${isScrolled ? 'marquee-bar-hidden' : ''}`}>
@@ -222,7 +225,11 @@ function TaxPortal() {
       {/* ═══════════════════════════════════════════════
           HERO — DI LUAR <main>, FULL VIEWPORT WIDTH
           ═══════════════════════════════════════════════ */}
-      <section className="hero-fullbleed" aria-labelledby="welcome-title">
+      <section 
+        className="hero-fullbleed" 
+        aria-labelledby="welcome-title"
+        style={{ backgroundImage: `url("${kppRengatImg}")` }}
+      >
         <div className="hero-inner">
           <div className="welcome-copy">
             <span className="eyebrow">Pusat Layanan & Informasi Perpajakan</span>
@@ -590,7 +597,7 @@ function TaxPortal() {
           <p className="section-subtitle-center">Saksikan video promosi layanan asisten virtual pajak kami</p>
           <div className="promo-video-wrapper">
             <div className="promo-video-placeholder">
-              <img src="https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=1200&h=675&fit=crop&q=80" alt="Video Promosi" loading="lazy" />
+              <img src={kppRengatImg} alt="Kantor KPP Pratama Rengat" loading="lazy" />
               <div className="promo-video-overlay" />
               <button className="promo-play-btn" aria-label="Putar video promosi"><svg width="28" height="28" viewBox="0 0 24 24" fill="var(--djp-blue-dark)"><path d="M8 5v14l11-7z" /></svg></button>
               <span className="promo-coming-soon-badge">🎬 Segera Hadir di Instagram</span>
@@ -613,9 +620,32 @@ function TaxPortal() {
             <div className="ops-card">
               <div className="ops-card-header"><span className="ops-icon">📍</span><h3>Alamat Kantor</h3></div>
               <div className="ops-address">
-                <p className="address-main">Jl. Jenderal Sudirman No. 1</p><p>Kelurahan Rengat Barat, Kecamatan Rengat</p><p>Kabupaten Indragiri Hulu</p><p className="address-postal">Provinsi Riau, 29311</p>
+                <p className="address-main">KPP Pratama Rengat</p>
+                <p>Jl. Bupati Tulus No. 9, Sekip Hulu, Kec. Rengat</p>
+                <p>Kabupaten Indragiri Hulu</p>
+                <p className="address-postal">Provinsi Riau, 29314</p>
               </div>
-              <a href="https://www.google.com/maps/search/KPP+Pratama+Rengat" target="_blank" rel="noopener noreferrer" className="map-fake"><span>📍</span><p>Lihat di Google Maps</p></a>
+              <div className="map-embed-container">
+                <iframe
+                  title="Peta Lokasi KPP Pratama Rengat"
+                  src="https://maps.google.com/maps?q=KPP+Pratama+Rengat&t=&z=16&ie=UTF8&iwloc=&output=embed"
+                  width="100%"
+                  height="160"
+                  style={{ border: 0, borderRadius: '8px 8px 0 0', display: 'block' }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+                <a
+                  href="https://www.google.com/maps/search/KPP+Pratama+Rengat"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="map-open-link"
+                >
+                  <span>📍 Buka di Google Maps</span>
+                  <span>↗</span>
+                </a>
+              </div>
             </div>
             <div className="ops-card">
               <div className="ops-card-header"><span className="ops-icon">🎯</span><h3>Misi Kami</h3></div>
