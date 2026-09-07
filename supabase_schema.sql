@@ -30,6 +30,7 @@ ALTER TABLE public.chat_sessions ADD COLUMN IF NOT EXISTS resolution_time_ms INT
 ALTER TABLE public.chat_sessions ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ DEFAULT TIMEZONE('utc', NOW());
 ALTER TABLE public.chat_sessions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT TIMEZONE('utc', NOW());
 ALTER TABLE public.chat_sessions ADD COLUMN IF NOT EXISTS ended_at TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE public.chat_sessions ADD COLUMN IF NOT EXISTS wp_name TEXT DEFAULT NULL;
 
 -- Perbarui Constraint Status & Channel agar mendukung 'web' dan 'whatsapp'
 ALTER TABLE public.chat_sessions DROP CONSTRAINT IF EXISTS chat_sessions_channel_check;
@@ -43,6 +44,7 @@ ALTER TABLE public.chat_sessions ADD CONSTRAINT chat_sessions_status_check
 -- Indeks kinerja
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_status ON public.chat_sessions(status);
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_channel ON public.chat_sessions(channel);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_channel_status ON public.chat_sessions(channel, status);
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_started_at ON public.chat_sessions(started_at DESC);
 
 
@@ -59,6 +61,7 @@ CREATE TABLE IF NOT EXISTS public.chat_messages (
 ALTER TABLE public.chat_messages ADD COLUMN IF NOT EXISTS session_id TEXT;
 ALTER TABLE public.chat_messages ADD COLUMN IF NOT EXISTS role TEXT;
 ALTER TABLE public.chat_messages ADD COLUMN IF NOT EXISTS text TEXT;
+ALTER TABLE public.chat_messages ADD COLUMN IF NOT EXISTS content TEXT;
 ALTER TABLE public.chat_messages ADD COLUMN IF NOT EXISTS category TEXT DEFAULT NULL;
 ALTER TABLE public.chat_messages ADD COLUMN IF NOT EXISTS priority TEXT DEFAULT NULL;
 ALTER TABLE public.chat_messages ADD COLUMN IF NOT EXISTS confidence_score NUMERIC DEFAULT NULL;

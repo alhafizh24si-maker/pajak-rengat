@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import fs from 'fs';
+import path from 'path';
 import qrcode from 'qrcode-terminal';
 import pkg from 'whatsapp-web.js';
 const { Client, LocalAuth } = pkg;
@@ -65,10 +67,50 @@ client.on('qr', (qr) => {
   console.log('=============================================================\n');
   qrcode.generate(qr, { small: true });
   console.log('\nBuka WhatsApp di HP > Perangkat Tertaut > Tautkan Perangkat\n');
+
+  // URL gambar presisi jika QR di terminal lonjong karena font Windows
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=${encodeURIComponent(qr)}`;
+  console.log('💡 TIPS: Jika QR di terminal lonjong atau sulit di-scan kamera HP:');
+  console.log('👉 Buka file ini di browser Anda: file:///' + path.resolve('./scan-qr.html').replace(/\\/g, '/'));
+  console.log('👉 Atau buka link gambar ini langsung:\n   ' + qrImageUrl + '\n');
+
+  try {
+    const htmlContent = `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Scan QR WhatsApp KPP Pratama Rengat</title>
+  <style>
+    body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 95vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; margin: 0; }
+    .card { background: white; padding: 32px; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.1); text-align: center; max-width: 420px; }
+    h2 { color: #0b3954; margin-top: 0; margin-bottom: 8px; font-size: 20px; }
+    p { color: #555; font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+    img { width: 300px; height: 300px; border: 8px solid #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.12); }
+    .badge { display: inline-block; background: #e8f5e9; color: #2e7d32; font-weight: bold; font-size: 12px; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px; }
+    .footer { font-size: 12px; color: #888; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">WhatsApp Business: +62 812-5000-213</div>
+    <h2>Tautkan Perangkat WhatsApp</h2>
+    <p>Buka WhatsApp Business di HP &gt; <b>Perangkat Tertaut</b> &gt; <b>Tautkan Perangkat</b>, lalu pindai kode di bawah ini:</p>
+    <img src="${qrImageUrl}" alt="WhatsApp QR Code">
+    <div class="footer">QR Code otomatis diperbarui setiap kali generate</div>
+  </div>
+</body>
+</html>`;
+    fs.writeFileSync(path.resolve('./scan-qr.html'), htmlContent);
+  } catch (err) {
+    // Abaikan jika error penulisan file
+  }
 });
 
 client.on('authenticated', () => {
   console.log('✅ Otentikasi WhatsApp Berhasil!');
+  try {
+    if (fs.existsSync('./scan-qr.html')) fs.unlinkSync('./scan-qr.html');
+  } catch (e) {}
 });
 
 client.on('auth_failure', (msg) => {
@@ -113,7 +155,13 @@ client.on('ready', async () => {
             console.log(`📤 Mengirim pesan ke nomor WA: ${recipientWaId}`);
 
             // Kirim via WhatsApp Web API
-            await client.sendMessage(recipientWaId, newMsg.text);
+            const replyText = newMsg.text || newMsg.content;
+            if (!replyText) {
+              console.warn(`⚠️ Pesan kosong atau tidak memiliki field text/content untuk ${newMsg.session_id}`);
+              return;
+            }
+
+            await client.sendMessage(recipientWaId, replyText);
 
             // Perbarui status pesan di Supabase
             await supabase
@@ -133,6 +181,11 @@ client.on('ready', async () => {
     });
 });
 
+client.on('disconnected', (reason) => {
+  console.warn('⚠️ WhatsApp client terputus:', reason);
+  console.log('💡 Silakan restart engine atau scan ulang QR code jika session kedaluwarsa.');
+});
+
 // ── 5. ALUR 1: WHATSAPP -> SUPABASE (PESAN MASUK DARI WAJIB PAJAK) ──
 client.on('message', async (msg) => {
   // Abaikan pesan dari grup WhatsApp, broadcast status, atau pesan dari bot sendiri
@@ -146,7 +199,16 @@ client.on('message', async (msg) => {
 
   if (!text) return;
 
-  console.log(`\n💬 Pesan masuk dari WP [${sessionId}]: "${text}"`);
+  // Dapatkan nama Wajib Pajak dari kontak WhatsApp
+  let wpName = 'Wajib Pajak';
+  try {
+    const contact = await msg.getContact();
+    wpName = contact.pushname || contact.name || msg._data?.notifyName || 'Wajib Pajak';
+  } catch (contactErr) {
+    wpName = msg._data?.notifyName || 'Wajib Pajak';
+  }
+
+  console.log(`\n💬 Pesan masuk dari WP [${sessionId} - ${wpName}]: "${text}"`);
 
   try {
     // 1. Dapatkan atau buat sesi di Supabase
@@ -157,13 +219,14 @@ client.on('message', async (msg) => {
       .maybeSingle();
 
     if (!session) {
-      console.log(`🆕 Membuat sesi baru untuk nomor WA: ${sessionId}`);
+      console.log(`🆕 Membuat sesi baru untuk nomor WA: ${sessionId} (${wpName})`);
       const { data: newSession } = await supabase
         .from('chat_sessions')
         .insert({
           session_id: sessionId,
           channel: 'whatsapp',
           status: 'active',
+          wp_name: wpName,
           primary_category: 'Konsultasi',
           message_count: 0,
           started_at: new Date().toISOString(),
@@ -172,13 +235,20 @@ client.on('message', async (msg) => {
         .select()
         .single();
       session = newSession;
+    } else if ((!session.wp_name || session.wp_name === 'Wajib Pajak') && wpName !== 'Wajib Pajak') {
+      // Perbarui nama WP jika sebelumnya kosong atau default
+      await supabase
+        .from('chat_sessions')
+        .update({ wp_name: wpName, updated_at: new Date().toISOString() })
+        .eq('session_id', sessionId);
     }
 
-    // 2. Simpan pesan Wajib Pajak ke chat_messages
+    // 2. Simpan pesan Wajib Pajak ke chat_messages (isi text dan content untuk kompatibilitas)
     await supabase.from('chat_messages').insert({
       session_id: sessionId,
       role: 'user',
       text: text,
+      content: text,
       message_status: 'received',
       created_at: new Date().toISOString(),
     });
@@ -219,11 +289,12 @@ client.on('message', async (msg) => {
       // Kirim balasan ke WA
       await client.sendMessage(rawSender, answerResult.reply);
 
-      // Simpan balasan bot ke chat_messages
+      // Simpan balasan bot ke chat_messages (isi text & content)
       await supabase.from('chat_messages').insert({
         session_id: sessionId,
         role: 'bot',
         text: answerResult.reply,
+        content: answerResult.reply,
         category: answerResult.category || 'Konsultasi',
         priority: answerResult.priority || 'P3',
         message_status: 'sent_to_wa',
@@ -245,6 +316,7 @@ client.on('message', async (msg) => {
         session_id: sessionId,
         role: 'bot',
         text: WA_MENU_GREETING,
+        content: WA_MENU_GREETING,
         category: 'Menu',
         priority: 'P4',
         message_status: 'sent_to_wa',
@@ -262,6 +334,7 @@ client.on('message', async (msg) => {
       session_id: sessionId,
       role: 'bot',
       text: fallbackMsg,
+      content: fallbackMsg,
       category: 'Unmatched',
       priority: 'P4',
       message_status: 'sent_to_wa',

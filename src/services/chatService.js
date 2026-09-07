@@ -42,11 +42,11 @@ const validateRole = (role) => {
 
 const normalizeTemplate = (row) => ({
   id: row.id,
-  category: row.category,
-  title: row.title,
-  priority: row.priority || 'P3',
-  tags: row.keywords || row.tags || [],
-  usageCount: row.use_count ?? row.usage_count ?? row.usageCount ?? 0,
+  category: row.category || 'Umum',
+  title: row.title || '',
+  priority: String(row.priority || 'P3'),
+  tags: Array.isArray(row.keywords) ? row.keywords : (Array.isArray(row.tags) ? row.tags : []),
+  usageCount: Number(row.use_count ?? row.usage_count ?? row.usageCount ?? 0),
   template: row.content || row.template || '',
   isFavorite: Boolean(row.is_favorite ?? row.isFavorite),
 });
@@ -187,6 +187,7 @@ export async function logChatMessage(arg1, roleArg, textArg, confidenceScoreArg 
       session_id: sessionId,
       role,
       text: textValidation.sanitized,
+      content: textValidation.sanitized,
       created_at: new Date().toISOString(),
       confidence_score: typeof confidenceScore === 'number' ? confidenceScore : null,
       category: metadata.category || null,
@@ -361,7 +362,7 @@ export async function getDashboardStats(period = 30) {
 
 export function subscribeToNewChats(callback) {
   if (!supabase) return null;
-  return supabase.channel('public:chat_sessions').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_sessions' }, (payload) => callback(payload.new)).subscribe();
+  return supabase.channel('public:chat_sessions').on('postgres_changes', { event: '*', schema: 'public', table: 'chat_sessions' }, (payload) => callback(payload.new)).subscribe();
 }
 
 export function subscribeToNewMessages(callback) {
