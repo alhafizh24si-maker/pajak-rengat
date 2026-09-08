@@ -117,15 +117,16 @@ client.on('auth_failure', (msg) => {
   console.error('❌ Gagal otentikasi WhatsApp:', msg);
 });
 
-client.on('ready', async () => {
-  console.log('\n=============================================================');
-  console.log('🚀 MESIN WHATSAPP BOT KPP PRATAMA RENGAT AKTIF & SIAP!');
-  console.log('=============================================================\n');
+let adminDispatcherChannel = null;
 
-  // ── 4. ALUR 2: SUPABASE -> WHATSAPP (RELAY BALASAN ADMIN) ──
+function setupAdminDispatcher() {
+  if (adminDispatcherChannel) {
+    return;
+  }
+
   console.log('🎧 Memulai Real-time Listener balasan Admin dari Supabase...');
 
-  supabase
+  adminDispatcherChannel = supabase
     .channel('wa-admin-dispatcher')
     .on(
       'postgres_changes',
@@ -179,11 +180,26 @@ client.on('ready', async () => {
     .subscribe((status) => {
       console.log(`📡 Status Realtime Supabase Dispatcher: ${status}`);
     });
+}
+
+client.on('ready', async () => {
+  console.log('\n=============================================================');
+  console.log('🚀 MESIN WHATSAPP BOT KPP PRATAMA RENGAT AKTIF & SIAP!');
+  console.log('=============================================================\n');
+
+  // ── 4. ALUR 2: SUPABASE -> WHATSAPP (RELAY BALASAN ADMIN) ──
+  setupAdminDispatcher();
 });
 
 client.on('disconnected', (reason) => {
   console.warn('⚠️ WhatsApp client terputus:', reason);
-  console.log('💡 Silakan restart engine atau scan ulang QR code jika session kedaluwarsa.');
+  console.log('💡 Menghapus sesi lokal yang terputus agar bisa scan ulang dengan bersih...');
+  try {
+    if (fs.existsSync('./.wwebjs_auth')) {
+      fs.rmSync('./.wwebjs_auth', { recursive: true, force: true });
+    }
+  } catch (e) {}
+  console.log('👉 Silakan restart engine (npm start) untuk scan ulang QR code.');
 });
 
 // ── 5. ALUR 1: WHATSAPP -> SUPABASE (PESAN MASUK DARI WAJIB PAJAK) ──
@@ -220,38 +236,60 @@ client.on('message', async (msg) => {
 
     if (!session) {
       console.log(`🆕 Membuat sesi baru untuk nomor WA: ${sessionId} (${wpName})`);
-      const { data: newSession } = await supabase
+      const sessionPayload = {
+        session_id: sessionId,
+        channel: 'whatsapp',
+        status: 'active',
+        wp_name: wpName,
+        primary_category: 'Konsultasi',
+        message_count: 0,
+        started_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      let { data: newSession, error: sErr } = await supabase
         .from('chat_sessions')
-        .insert({
-          session_id: sessionId,
-          channel: 'whatsapp',
-          status: 'active',
-          wp_name: wpName,
-          primary_category: 'Konsultasi',
-          message_count: 0,
-          started_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
+        .insert(sessionPayload)
         .select()
-        .single();
+        .maybeSingle();
+
+      if (sErr) {
+        if (sErr.message?.includes('wp_name')) {
+          delete sessionPayload.wp_name;
+          const retry = await supabase.from('chat_sessions').insert(sessionPayload).select().maybeSingle();
+          newSession = retry.data;
+        } else {
+          console.error('❌ Gagal membuat sesi di Supabase:', sErr.message);
+        }
+      }
       session = newSession;
-    } else if ((!session.wp_name || session.wp_name === 'Wajib Pajak') && wpName !== 'Wajib Pajak') {
-      // Perbarui nama WP jika sebelumnya kosong atau default
+    } else if (wpName && wpName !== 'Wajib Pajak' && (!session.wp_name || session.wp_name === 'Wajib Pajak')) {
       await supabase
         .from('chat_sessions')
         .update({ wp_name: wpName, updated_at: new Date().toISOString() })
-        .eq('session_id', sessionId);
+        .eq('session_id', sessionId)
+        .catch(() => {});
     }
 
-    // 2. Simpan pesan Wajib Pajak ke chat_messages (isi text dan content untuk kompatibilitas)
-    await supabase.from('chat_messages').insert({
+    // 2. Simpan pesan Wajib Pajak ke chat_messages
+    const userMsgPayload = {
       session_id: sessionId,
       role: 'user',
       text: text,
       content: text,
       message_status: 'received',
       created_at: new Date().toISOString(),
-    });
+    };
+
+    let { error: msgErr } = await supabase.from('chat_messages').insert(userMsgPayload);
+    if (msgErr && msgErr.message?.includes('content')) {
+      delete userMsgPayload.content;
+      const retry = await supabase.from('chat_messages').insert(userMsgPayload);
+      msgErr = retry.error;
+    }
+    if (msgErr) {
+      console.error('❌ Gagal menyimpan pesan ke chat_messages:', msgErr.message);
+    }
 
     // Perbarui jumlah pesan di sesi
     await supabase
@@ -289,8 +327,8 @@ client.on('message', async (msg) => {
       // Kirim balasan ke WA
       await client.sendMessage(rawSender, answerResult.reply);
 
-      // Simpan balasan bot ke chat_messages (isi text & content)
-      await supabase.from('chat_messages').insert({
+      // Simpan balasan bot ke chat_messages
+      const botMsgPayload = {
         session_id: sessionId,
         role: 'bot',
         text: answerResult.reply,
@@ -299,7 +337,12 @@ client.on('message', async (msg) => {
         priority: answerResult.priority || 'P3',
         message_status: 'sent_to_wa',
         created_at: new Date().toISOString(),
-      });
+      };
+      let { error: bErr } = await supabase.from('chat_messages').insert(botMsgPayload);
+      if (bErr && bErr.message?.includes('content')) {
+        delete botMsgPayload.content;
+        await supabase.from('chat_messages').insert(botMsgPayload);
+      }
       return;
     }
 
@@ -348,4 +391,16 @@ client.on('message', async (msg) => {
 
 // Jalankan klien WhatsApp
 console.log('🚀 Memulai WhatsApp Engine...');
-client.initialize();
+client.initialize().catch((err) => {
+  console.error('❌ Terjadi error saat inisialisasi WhatsApp client:', err.message);
+  if (err.message.includes('Execution context was destroyed') || err.message.includes('Session closed')) {
+    console.log('💡 Sesi WhatsApp sebelumnya terputus atau telah dikeluarkan dari HP.');
+    console.log('💡 Menghapus sesi lama yang rusak...');
+    try {
+      if (fs.existsSync('./.wwebjs_auth')) {
+        fs.rmSync('./.wwebjs_auth', { recursive: true, force: true });
+      }
+    } catch (e) {}
+    console.log('👉 Silakan jalankan ulang "npm start" untuk scan QR baru.');
+  }
+});

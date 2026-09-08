@@ -330,7 +330,7 @@ function TemplatesTab({ initialQuery = '' }) {
 
 // ── Tab 3: Chats ──
 function ChatsTab({ remoteSessions = [], onChatUpdated }) {
-  const [status, setStatus] = useState('active'); 
+  const [status, setStatus] = useState('needs_attention'); 
   const [channelFilter, setChannelFilter] = useState('all'); 
   const [selected, setSelected] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -354,7 +354,14 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
     : defaultSessions;
 
   const filtered = sourceSessions.filter((session) => {
-    const matchStatus = status === 'Semua Status' || session.status === status;
+    let matchStatus = false;
+    if (status === 'Semua Status') {
+      matchStatus = true;
+    } else if (status === 'needs_attention') {
+      matchStatus = session.status === 'active' || session.status === 'escalated';
+    } else {
+      matchStatus = session.status === status;
+    }
     const matchChannel = channelFilter === 'all' || session.channel === channelFilter;
     return matchStatus && matchChannel;
   });
@@ -468,8 +475,9 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
           </div>
 
           <select value={status} onChange={(event) => setStatus(event.target.value)} className="ad-chats-status-select w-full p-2 border rounded-lg text-sm bg-white outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 mb-2">
-            <option value="active">Aktif (Butuh Balasan)</option>
+            <option value="needs_attention">Antrean Masuk (Aktif & Eskalasi)</option>
             <option value="escalated">⚠️ Eskalasi (Petugas)</option>
+            <option value="active">Sesi Aktif Standar</option>
             <option value="resolved">✓ Selesai</option>
             <option value="Semua Status">Semua Status</option>
           </select>
