@@ -69,8 +69,12 @@ function OverviewTab({ period, setPeriod, stats }) {
     period === '7'
       ? [32, 48, 41, 56, 63, 58, 72]
       : period === '90'
-      ? [42, 58, 51, 70, 64, 82, 94]
-      : [48, 62, 57, 78, 72, 91, 84];
+        ? [42, 58, 51, 70, 64, 82, 94]
+        : [48, 62, 57, 78, 72, 91, 84];
+
+  const handleExport = () => {
+    alert('Fitur Export Laporan KPI (CSV/PDF) sedang diproses...');
+  };
 
   return (
     <div className="ad-overview-tab max-w-7xl mx-auto">
@@ -79,18 +83,23 @@ function OverviewTab({ period, setPeriod, stats }) {
           <h2 className="ad-overview-title text-2xl font-extrabold text-[#0A2540]">Ringkasan Kinerja</h2>
           <p className="ad-overview-subtitle text-sm text-gray-500 mt-1">Pantau kualitas layanan chatbot dan kebutuhan pengembangan jawaban.</p>
         </div>
-        <label className="ad-period flex items-center gap-2 text-sm font-semibold text-gray-600">
-          <span>Periode:</span>
-          <select 
-            value={period} 
-            onChange={(event) => setPeriod(event.target.value)}
-            className="ad-period-select px-3 py-1.5 border rounded-lg bg-white outline-none focus:border-blue-500"
-          >
-            <option value="7">7 Hari Terakhir</option>
-            <option value="30">30 Hari Terakhir</option>
-            <option value="90">90 Hari Terakhir</option>
-          </select>
-        </label>
+        <div className="flex gap-4 items-center">
+          <button onClick={handleExport} className="ad-export-btn">
+            📥 Unduh Laporan
+          </button>
+          <label className="ad-period flex items-center gap-2 text-sm font-semibold text-gray-600">
+            <span>Periode:</span>
+            <select
+              value={period}
+              onChange={(event) => setPeriod(event.target.value)}
+              className="ad-period-select px-3 py-1.5 border rounded-lg bg-white outline-none focus:border-blue-500"
+            >
+              <option value="7">7 Hari Terakhir</option>
+              <option value="30">30 Hari Terakhir</option>
+              <option value="90">90 Hari Terakhir</option>
+            </select>
+          </label>
+        </div>
       </div>
 
       <div className="ad-kpi-grid">
@@ -101,9 +110,9 @@ function OverviewTab({ period, setPeriod, stats }) {
           [
             '⚡',
             stats?.kpi?.avgResponseTime?.display ||
-              (stats?.kpi?.avgResponseTime?.value
-                ? `${(stats.kpi.avgResponseTime.value / 1000).toFixed(1)}s`
-                : '2.8s'),
+            (stats?.kpi?.avgResponseTime?.value
+              ? `${(stats.kpi.avgResponseTime.value / 1000).toFixed(1)}s`
+              : '2.8s'),
             'Respons Pertama',
             '-15%',
           ],
@@ -330,27 +339,31 @@ function TemplatesTab({ initialQuery = '' }) {
 
 // ── Tab 3: Chats ──
 function ChatsTab({ remoteSessions = [], onChatUpdated }) {
-  const [status, setStatus] = useState('needs_attention'); 
-  const [channelFilter, setChannelFilter] = useState('all'); 
+  const [status, setStatus] = useState('needs_attention');
+  const [channelFilter, setChannelFilter] = useState('all');
   const [selected, setSelected] = useState(null);
   const [messages, setMessages] = useState([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [isSending, setIsSending] = useState(false);
 
+  // New: Internal Notes State
+  const [sessionNotes, setSessionNotes] = useState({}); // Key: sessionId, Value: Array of note objects
+  const [newNoteText, setNewNoteText] = useState('');
+
   const sourceSessions = remoteSessions.length
     ? remoteSessions.map((session) => ({
-        ...session,
-        sessionId: session.session_id || session.sessionId,
-        channel: session.channel || 'web',
-        wpName: session.wp_name || session.wpName || null,
-        startedAt: session.started_at || session.startedAt,
-        firstResponseTimeMs:
-          session.first_response_ms ||
-          session.first_response_time_ms ||
-          session.firstResponseTimeMs ||
-          0,
-      }))
+      ...session,
+      sessionId: session.session_id || session.sessionId,
+      channel: session.channel || 'web',
+      wpName: session.wp_name || session.wpName || null,
+      startedAt: session.started_at || session.startedAt,
+      firstResponseTimeMs:
+        session.first_response_ms ||
+        session.first_response_time_ms ||
+        session.firstResponseTimeMs ||
+        0,
+    }))
     : defaultSessions;
 
   const filtered = sourceSessions.filter((session) => {
@@ -366,6 +379,7 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
     return matchStatus && matchChannel;
   });
 
+  // Update selected session if data changes
   useEffect(() => {
     if (selected) {
       const updatedSession = sourceSessions.find(s => s.sessionId === selected.sessionId);
@@ -373,6 +387,7 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
     }
   }, [sourceSessions, selected?.sessionId]);
 
+  // Load messages
   useEffect(() => {
     if (!selected?.sessionId) {
       setMessages([]);
@@ -427,9 +442,9 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
       });
 
       if (error) throw error;
-      
+
       setReplyText('');
-      if (onChatUpdated) onChatUpdated(); 
+      if (onChatUpdated) onChatUpdated();
     } catch (error) {
       alert('Gagal mengirim balasan: ' + error.message);
     } finally {
@@ -448,25 +463,42 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
     }
   };
 
+  // New: Add Internal Note
+  const handleAddNote = () => {
+    if (!newNoteText.trim() || !selected) return;
+    const note = {
+      id: Date.now(),
+      text: newNoteText,
+      author: 'Anda', // Dalam real app ambil dari user context
+      timestamp: new Date().toISOString()
+    };
+
+    setSessionNotes(prev => ({
+      ...prev,
+      [selected.sessionId]: [...(prev[selected.sessionId] || []), note]
+    }));
+    setNewNoteText('');
+  };
+
   return (
     <div className="ad-chats-tab flex h-[calc(100vh-140px)] gap-6 w-full max-w-full">
       {/* Kolom Daftar Antrean */}
       <div className="ad-chats-sidebar w-1/3 flex flex-col bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
         <div className="ad-chats-sidebar-header p-4 border-b bg-gray-50/50">
           <div className="ad-channel-filter flex gap-2 mb-3 bg-gray-100 p-1 rounded-lg">
-            <button 
+            <button
               onClick={() => setChannelFilter('all')}
               className={`ad-channel-btn text-xs px-3 py-1.5 rounded-md flex-1 transition-colors ${channelFilter === 'all' ? 'active bg-white shadow-sm text-gray-800 font-bold' : 'text-gray-500 hover:bg-gray-200'}`}
             >
               Semua
             </button>
-            <button 
+            <button
               onClick={() => setChannelFilter('web')}
               className={`ad-channel-btn channel-web text-xs px-3 py-1.5 rounded-md flex-1 transition-colors ${channelFilter === 'web' ? 'active bg-blue-600 shadow-sm text-white font-bold' : 'text-gray-500 hover:bg-gray-200'}`}
             >
               🌐 Web
             </button>
-            <button 
+            <button
               onClick={() => setChannelFilter('whatsapp')}
               className={`ad-channel-btn channel-wa text-xs px-3 py-1.5 rounded-md flex-1 transition-colors ${channelFilter === 'whatsapp' ? 'active bg-green-600 shadow-sm text-white font-bold' : 'text-gray-500 hover:bg-gray-200'}`}
             >
@@ -550,8 +582,8 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
               </div>
               <div className="flex gap-2">
                 {selected.status !== 'resolved' && (
-                  <button 
-                    className="ad-resolve-btn px-4 py-1.5 bg-green-50 text-green-700 hover:bg-green-600 hover:text-white border border-green-200 hover:border-green-600 rounded-lg text-sm font-bold transition-all" 
+                  <button
+                    className="ad-resolve-btn px-4 py-1.5 bg-green-50 text-green-700 hover:bg-green-600 hover:text-white border border-green-200 hover:border-green-600 rounded-lg text-sm font-bold transition-all"
                     onClick={handleResolveSession}
                   >
                     ✓ Selesai
@@ -559,7 +591,48 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
                 )}
               </div>
             </div>
-            
+
+            {/* New: Internal Notes Section */}
+            <div className="ad-chat-memo">
+              <div className="ad-memo-header">
+                <span className="ad-memo-title">📌 Memo Internal (Petugas)</span>
+              </div>
+
+              {(sessionNotes[selected.sessionId] || []).length > 0 && (
+                <div className="ad-memo-list">
+                  {sessionNotes[selected.sessionId].map(note => (
+                    <div key={note.id} className="ad-memo-item">
+                      <div className="ad-memo-meta">
+                        <strong>{note.author}</strong>
+                        <span>{new Date(note.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <p>{note.text}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {selected.status !== 'resolved' && (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    className="ad-memo-input"
+                    placeholder="Tulis catatan internal..."
+                    value={newNoteText}
+                    onChange={(e) => setNewNoteText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddNote()}
+                  />
+                  <button
+                    onClick={handleAddNote}
+                    disabled={!newNoteText.trim()}
+                    className="ad-primary-btn text-xs px-3 py-1 h-auto"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Riwayat Obrolan Live */}
             <div className="ad-chat-thread flex-grow overflow-y-auto p-6 flex flex-col gap-4 bg-[#F8FAFC]">
               {loadingMessages ? (
@@ -575,8 +648,8 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
                   const isOfficer = message.role === 'admin';
 
                   return (
-                    <div 
-                      className={`ad-chat-bubble flex flex-col max-w-[75%] ${isUser ? 'ad-bubble-user self-start' : isOfficer ? 'ad-bubble-officer self-end' : 'ad-bubble-bot self-start'}`} 
+                    <div
+                      className={`ad-chat-bubble flex flex-col max-w-[75%] ${isUser ? 'ad-bubble-user self-start' : isOfficer ? 'ad-bubble-officer self-end' : 'ad-bubble-bot self-start'}`}
                       key={message.id || `${message.created_at}-${index}`}
                     >
                       <div className={`ad-bubble-info flex items-baseline gap-2 mb-1 px-1 ${isUser ? 'self-start' : 'self-end'}`}>
@@ -587,13 +660,12 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
                           {new Date(message.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                         </small>
                       </div>
-                      <div className={`ad-bubble-content p-3.5 rounded-2xl text-[13px] shadow-sm ${
-                        isUser 
-                          ? 'bg-white text-gray-800 border border-gray-100 rounded-tl-sm' 
+                      <div className={`ad-bubble-content p-3.5 rounded-2xl text-[13px] shadow-sm ${isUser
+                          ? 'bg-white text-gray-800 border border-gray-100 rounded-tl-sm'
                           : isOfficer
-                          ? 'bg-[#173459] text-white rounded-tr-sm'
-                          : 'bg-[#FFFBEB] text-[#92400E] border border-[#FDE68A] rounded-tr-sm'
-                      }`}>
+                            ? 'bg-[#173459] text-white rounded-tr-sm'
+                            : 'bg-[#FFFBEB] text-[#92400E] border border-[#FDE68A] rounded-tr-sm'
+                        }`}>
                         <p className="whitespace-pre-wrap m-0 leading-relaxed">{message.text || message.content}</p>
                       </div>
                     </div>
@@ -608,7 +680,7 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
                 <div className="ad-quick-templates mb-3 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
                   <span className="ad-quick-title text-[10px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap">Template Cepat:</span>
                   {responseTemplates.slice(0, 5).map(tpl => (
-                    <button 
+                    <button
                       key={tpl.id}
                       onClick={() => setReplyText(tpl.template)}
                       className="ad-quick-chip text-[11px] font-medium bg-gray-50 border border-gray-200 text-gray-600 px-3 py-1 rounded-full hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 whitespace-nowrap transition-colors"
@@ -619,7 +691,7 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
                 </div>
 
                 <div className="ad-reply-input-row flex gap-3">
-                  <textarea 
+                  <textarea
                     className="ad-reply-textarea flex-grow p-3 border border-gray-300 rounded-xl resize-none text-[13px] focus:outline-none focus:border-[#173459] focus:ring-1 focus:ring-[#173459] bg-gray-50 focus:bg-white transition-colors"
                     rows="2"
                     placeholder={`Ketik balasan untuk Wajib Pajak (${selected.channel === 'whatsapp' ? 'Pesan akan ditembakkan ke WhatsApp' : 'Akan muncul langsung di Web Widget'})...`}
@@ -633,16 +705,15 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
                       }
                     }}
                   />
-                  <button 
+                  <button
                     onClick={handleSendReply}
                     disabled={isSending || !replyText.trim()}
-                    className={`ad-reply-send-btn px-6 rounded-xl font-bold text-sm transition-all flex flex-col items-center justify-center gap-1 ${
-                      isSending || !replyText.trim() 
-                        ? 'disabled bg-gray-100 text-gray-400 cursor-not-allowed' 
+                    className={`ad-reply-send-btn px-6 rounded-xl font-bold text-sm transition-all flex flex-col items-center justify-center gap-1 ${isSending || !replyText.trim()
+                        ? 'disabled bg-gray-100 text-gray-400 cursor-not-allowed'
                         : selected.channel === 'whatsapp'
-                        ? 'channel-wa bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg'
-                        : 'channel-web bg-[#173459] text-white hover:bg-[#0A2540] shadow-md hover:shadow-lg'
-                    }`}
+                          ? 'channel-wa bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg'
+                          : 'channel-web bg-[#173459] text-white hover:bg-[#0A2540] shadow-md hover:shadow-lg'
+                      }`}
                   >
                     {isSending ? (
                       <span className="animate-pulse">Mengirim...</span>
@@ -724,6 +795,13 @@ export default function AdminDashboard({ onBack }) {
   const [stats, setStats] = useState(null);
   const [templateQuery, setTemplateQuery] = useState('');
 
+  // New: Notification State
+  const [notifications, setNotifications] = useState([
+    { id: 1, text: 'Sesi #9232 baru saja meminta bantuan manusia (Escalated).', time: '2 menit lalu', type: 'alert' },
+    { id: 2, text: 'Template "Cara Reset EFIN" telah mencapai 1000 penggunaan.', time: '1 jam lalu', type: 'info' },
+    { id: 3, text: 'Server kembali online setelah maintenance.', time: '3 jam lalu', type: 'success' },
+  ]);
+
   const handleSignOut = async () => {
     if (window.confirm('Apakah Anda yakin ingin keluar dari panel admin?')) {
       await signOut();
@@ -750,13 +828,15 @@ export default function AdminDashboard({ onBack }) {
 
   useEffect(() => {
     fetchDashboard();
-    
+
     const sessionChannel = subscribeToNewChats(() => {
       fetchDashboard();
+      // Simulasi notifikasi masuk
+      setNotifications(prev => [{ id: Date.now(), text: 'Sesi baru masuk dari WhatsApp.', time: 'Baru saja', type: 'info' }, ...prev]);
     });
-    
+
     const messageChannel = subscribeToNewMessages(() => {
-      fetchDashboard(); 
+      fetchDashboard();
     });
 
     return () => {
@@ -774,7 +854,7 @@ export default function AdminDashboard({ onBack }) {
 
   return (
     <div className="ad-dashboard-root flex h-screen w-full bg-[#F4F7FA] font-sans overflow-hidden">
-      
+
       {/* ── SIDEBAR KIRI ── */}
       <aside className="ad-sidebar w-[280px] bg-gradient-to-b from-[#0A2540] to-[#173459] flex flex-col shadow-2xl z-20 text-white shrink-0">
         <div className="ad-sidebar-header p-6 border-b border-white/10">
@@ -793,11 +873,10 @@ export default function AdminDashboard({ onBack }) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`ad-nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-semibold transition-all ${
-                activeTab === tab.id
+              className={`ad-nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-semibold transition-all ${activeTab === tab.id
                   ? 'active bg-white/10 text-white shadow-inner border-l-4 border-[#FFC700]'
                   : 'text-blue-200 hover:bg-white/5 hover:text-white border-l-4 border-transparent'
-              }`}
+                }`}
             >
               <span className="ad-nav-icon text-lg">{tab.icon}</span>
               <span className="ad-nav-label">{tab.label}</span>
@@ -829,12 +908,12 @@ export default function AdminDashboard({ onBack }) {
 
       {/* ── AREA KONTEN UTAMA ── */}
       <div className="ad-main-wrapper flex-1 flex flex-col min-w-0 bg-[#F8FAFC]">
-        
+
         {/* HEADER ATAS */}
         <header className="ad-header bg-white h-[72px] border-b border-gray-200 px-8 flex justify-between items-center shadow-sm shrink-0 z-10">
           <div className="ad-header-left flex items-center gap-5">
-            <button 
-              onClick={handleGoBack} 
+            <button
+              onClick={handleGoBack}
               className="ad-back-btn flex items-center gap-2 text-gray-500 hover:text-gray-800 text-sm font-bold transition-colors bg-gray-50 hover:bg-gray-100 px-3 py-1.5 rounded-lg border"
             >
               ← Portal Publik
@@ -845,19 +924,47 @@ export default function AdminDashboard({ onBack }) {
               <span>{tabs.find(t => t.id === activeTab)?.label}</span>
             </h2>
           </div>
-          
-          <div className="ad-header-status flex items-center gap-4 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100">
-            <div className="ad-live-pill flex items-center gap-2 text-sm font-medium">
-              <span className="ad-live-dot relative flex h-2.5 w-2.5">
-                {stats && <span className="ad-dot-ping animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
-                <span className={`ad-dot-solid relative inline-flex rounded-full h-2.5 w-2.5 ${stats ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-              </span>
-              <span className={stats ? 'text-green-700' : 'text-gray-500'}>
-                {stats ? 'Koneksi Stabil' : 'Mode Offline/Simulasi'}
-              </span>
+
+          <div className="ad-header-actions flex items-center gap-4">
+            {/* Notification Bell */}
+            <div className="ad-notif-wrapper">
+              <button className="ad-notif-bell">
+                🔔
+                {notifications.length > 0 && <span className="ad-notif-badge"></span>}
+              </button>
+              <div className="ad-notif-dropdown">
+                <div className="ad-notif-header">Notifikasi</div>
+                <div className="ad-notif-list">
+                  {notifications.length === 0 ? (
+                    <div className="p-4 text-center text-xs text-gray-400">Tidak ada notifikasi baru</div>
+                  ) : (
+                    notifications.map(n => (
+                      <div key={n.id} className="ad-notif-item">
+                        <span className="ad-notif-icon">{n.type === 'alert' ? '⚠️' : 'ℹ️'}</span>
+                        <div className="ad-notif-content">
+                          <strong>{n.text}</strong>
+                          <span className="ad-notif-time">{n.time}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
-            <span className="ad-status-sep text-gray-300">|</span>
-            <span className="ad-update-time text-gray-500 text-xs font-medium">Update: {new Date().toLocaleTimeString('id-ID')}</span>
+
+            <div className="ad-header-status flex items-center gap-4 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100">
+              <div className="ad-live-pill flex items-center gap-2 text-sm font-medium">
+                <span className="ad-live-dot relative flex h-2.5 w-2.5">
+                  {stats && <span className="ad-dot-ping animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
+                  <span className={`ad-dot-solid relative inline-flex rounded-full h-2.5 w-2.5 ${stats ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                </span>
+                <span className={stats ? 'text-green-700' : 'text-gray-500'}>
+                  {stats ? 'Koneksi Stabil' : 'Mode Offline/Simulasi'}
+                </span>
+              </div>
+              <span className="ad-status-sep text-gray-300">|</span>
+              <span className="ad-update-time text-gray-500 text-xs font-medium">Update: {new Date().toLocaleTimeString('id-ID')}</span>
+            </div>
           </div>
         </header>
 
