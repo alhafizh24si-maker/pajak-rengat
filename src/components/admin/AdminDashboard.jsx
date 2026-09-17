@@ -430,15 +430,14 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
 
     try {
       const isWa = selected.channel === 'whatsapp';
+      // ✅ FIX: Gunakan flat fields, bukan nested metadata — sesuai signature logChatMessage
       const { error } = await logChatMessage({
         sessionId: selected.sessionId,
         role: 'admin',
         text: replyText.trim(),
-        confidenceScore: null,
-        metadata: {
-          status: isWa ? 'pending_to_wa' : 'sent',
-          isTemplateUsed: false
-        }
+        status: isWa ? 'pending_to_wa' : 'sent',
+        isTemplateUsed: false,
+        templateId: null,
       });
 
       if (error) throw error;

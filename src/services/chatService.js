@@ -183,6 +183,7 @@ export async function logChatMessage(arg1, roleArg, textArg, confidenceScoreArg 
   }
 
   try {
+    const templateId = metadata.templateId || null;
     const messageData = {
       session_id: sessionId,
       role,
@@ -194,7 +195,8 @@ export async function logChatMessage(arg1, roleArg, textArg, confidenceScoreArg 
       priority: metadata.priority || null,
       message_status: metadata.status || 'received',
       is_template_used: Boolean(metadata.isTemplateUsed),
-      template_id: metadata.templateId || null,
+      // ✅ FIX: Hanya kirim template_id jika ada nilai valid (hindari uuid=text error)
+      ...(templateId ? { template_id: templateId } : {}),
     };
 
     // 1. Simpan pesan baru ke tabel chat_messages

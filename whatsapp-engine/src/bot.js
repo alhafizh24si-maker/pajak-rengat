@@ -23,7 +23,10 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
 
 console.log('🔗 Menghubungkan ke Supabase:', supabaseUrl);
 
-// ── 2. INISIALISASI WHATSAPP CLIENT ──
+// Helper penunda waktu (human-like delay) untuk menghindari deteksi bot oleh WhatsApp
+const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+
+// ── 2. INISIALISASI WHATSAPP CLIENT DENGAN STEALTH CONFIG ──
 const client = new Client({
   authStrategy: new LocalAuth({
     dataPath: './.wwebjs_auth',
@@ -36,9 +39,13 @@ const client = new Client({
       '--disable-dev-shm-usage',
       '--disable-accelerated-2d-canvas',
       '--no-first-run',
-      '--no-zygote',
       '--disable-gpu',
+      // Anti-deteksi otomasi: sembunyikan navigator.webdriver
+      '--disable-blink-features=AutomationControlled',
     ],
+    // Gunakan User-Agent Chrome desktop yang valid agar tidak terdeteksi Headless
+    userAgent:
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
   },
 });
 
@@ -155,12 +162,15 @@ function setupAdminDispatcher() {
             const recipientWaId = formatToWhatsAppId(newMsg.session_id);
             console.log(`📤 Mengirim pesan ke nomor WA: ${recipientWaId}`);
 
-            // Kirim via WhatsApp Web API
             const replyText = newMsg.text || newMsg.content;
             if (!replyText) {
               console.warn(`⚠️ Pesan kosong atau tidak memiliki field text/content untuk ${newMsg.session_id}`);
               return;
             }
+
+            // Jeda acak manusiawi (2-4 detik) sebelum admin reply dikirim ke WA
+            const adminReplyDelay = Math.floor(Math.random() * 2000) + 2000;
+            await delay(adminReplyDelay);
 
             await client.sendMessage(recipientWaId, replyText);
 
@@ -213,16 +223,9 @@ client.on('message', async (msg) => {
   const sessionId = cleanSessionId(rawSender);
   const text = msg.body?.trim();
 
-  if (!text) return;
-
-  // Dapatkan nama Wajib Pajak dari kontak WhatsApp
-  let wpName = 'Wajib Pajak';
-  try {
-    const contact = await msg.getContact();
-    wpName = contact.pushname || contact.name || msg._data?.notifyName || 'Wajib Pajak';
-  } catch (contactErr) {
-    wpName = msg._data?.notifyName || 'Wajib Pajak';
-  }
+  // ✅ ANTI-DETEKSI: Hindari msg.getContact() karena melakukan pengerukan data internal
+  // Ambil nama pengirim dari metadata pesan yang sudah ada di memori
+  const wpName = msg._data?.notifyName || msg._data?.pushname || 'Wajib Pajak';
 
   console.log(`\n💬 Pesan masuk dari WP [${sessionId} - ${wpName}]: "${text}"`);
 
@@ -324,6 +327,10 @@ client.on('message', async (msg) => {
         console.log(`⚠️ Sesi ${sessionId} dieskalasi ke Petugas.`);
       }
 
+      // Jeda manusiawi (2.5 - 5 detik) agar tidak terdeteksi sebagai spam bot instan
+      const humanDelay = Math.floor(Math.random() * 2500) + 2500;
+      await delay(humanDelay);
+
       // Kirim balasan ke WA
       await client.sendMessage(rawSender, answerResult.reply);
 
@@ -353,6 +360,8 @@ client.on('message', async (msg) => {
     );
 
     if (isGreeting) {
+      // Jeda manusiawi (2 - 4 detik)
+      await delay(Math.floor(Math.random() * 2000) + 2000);
       await client.sendMessage(rawSender, WA_MENU_GREETING);
 
       await supabase.from('chat_messages').insert({
@@ -371,6 +380,8 @@ client.on('message', async (msg) => {
     // Default Fallback jika pertanyaan tidak dikenali:
     const fallbackMsg = `Terima kasih telah menghubungi KPP Pratama Rengat.\n\nPertanyaan Anda belum dikenali oleh asisten otomatis kami.\n\n` + WA_MENU_GREETING;
 
+    // Jeda manusiawi (2 - 4 detik)
+    await delay(Math.floor(Math.random() * 2000) + 2000);
     await client.sendMessage(rawSender, fallbackMsg);
 
     await supabase.from('chat_messages').insert({

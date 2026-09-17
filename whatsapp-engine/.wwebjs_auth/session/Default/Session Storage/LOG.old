@@ -1,3 +1,2 @@
-2026/09/08-09:28:46.844 5a90 Reusing MANIFEST C:\pajak-rengat\whatsapp-engine\.wwebjs_auth\session\Default\Session Storage/MANIFEST-000001
-2026/09/08-09:28:46.871 5a90 Recovering log #3
-2026/09/08-09:28:46.895 5a90 Reusing old log C:\pajak-rengat\whatsapp-engine\.wwebjs_auth\session\Default\Session Storage/000003.log 
+2026/09/11-14:23:44.499 337c Creating DB C:\pajak-rengat\whatsapp-engine\.wwebjs_auth\session\Default\Session Storage since it was missing.
+2026/09/11-14:23:44.524 337c Reusing MANIFEST C:\pajak-rengat\whatsapp-engine\.wwebjs_auth\session\Default\Session Storage/MANIFEST-000001

@@ -53,6 +53,8 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
   const [pendingClicks, setPendingClicks] = useState([]);
   const [hasError, setHasError] = useState(false);
   const [sessionId, setSessionId] = useState(null);
+  // Mode live chat dengan petugas (aktif setelah pilih opsi 6 di web)
+  const [isHumanMode, setIsHumanMode] = useState(false);
 
   const [breadcrumb, setBreadcrumb] = useState([{ id: null, label: 'Beranda' }]);
   const [context, setContext] = useState({
@@ -114,12 +116,21 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
       if (sessionInitialized.current) return;
       sessionInitialized.current = true;
 
+      // Tandai channel sebagai 'web'
+      localStorage.setItem('kpp_rengat_channel', 'web');
+
       const savedSession = localStorage.getItem('kpp_rengat_session_id');
 
       if (savedSession) {
         const { data: existingSession } = await getChatSession(savedSession);
         if (existingSession && existingSession.status === 'active') {
           setSessionId(savedSession);
+          return;
+        }
+        // Jika sesi sebelumnya escalated, restore mode human
+        if (existingSession && existingSession.status === 'escalated') {
+          setSessionId(savedSession);
+          setIsHumanMode(true);
           return;
         }
       }
@@ -158,6 +169,9 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
         if (exists) return prev;
         return [...prev, incomingOfficerMsg];
       });
+
+      // ✅ Aktifkan mode human jika belum aktif (petugas sudah merespons)
+      setIsHumanMode(true);
 
       playNotificationSound();
       if (document.visibilityState !== 'visible') {
@@ -485,14 +499,34 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
         { category: opt.category, priority: opt.priority }
       );
 
-      // ⚡ REDIRECT KE WHATSAPP (Jika opsi bertipe 'human' / Hubungi Petugas)
+      // ⚡ LOGIKA ESCALATION: Pisahkan channel Web vs WhatsApp
       if (opt.action === 'human' || opt.id === 6 || opt.label.toLowerCase().includes('hubungi petugas')) {
         if (sessionId) {
           await updateChatSession(sessionId, { status: 'escalated' });
         }
-        setTimeout(() => {
-          redirectToWhatsApp(`Halo Admin KPP Pratama Rengat, saya butuh bantuan langsung mengenai menu '${opt.label}' (Sesi ID: ${sessionId})`);
-        }, 1200);
+
+        // Cek channel sesi saat ini dari localStorage atau default 'web'
+        const currentChannel = localStorage.getItem('kpp_rengat_channel') || 'web';
+
+        if (currentChannel === 'whatsapp') {
+          // Sesi WhatsApp: redirect ke WA (perilaku lama)
+          setTimeout(() => {
+            redirectToWhatsApp(`Halo Admin KPP Pratama Rengat, saya butuh bantuan langsung mengenai menu '${opt.label}' (Sesi ID: ${sessionId})`);
+          }, 1200);
+        } else {
+          // ✅ Sesi Web: JANGAN redirect ke WA. Aktifkan mode live chat dengan petugas.
+          setIsHumanMode(true);
+          // Tambahkan pesan status menunggu petugas
+          const waitMsg = {
+            sender: 'BOT',
+            text: `✅ Anda berhasil terhubung dengan antrian helpdesk petugas KPP Pratama Rengat.\n\nSilakan ketik pertanyaan atau keluhan Anda. Petugas kami akan membalas sebentar lagi pada jam kerja (Senin–Jumat, 08.00–16.00 WIB).\n\n🔔 Pesan balasan petugas akan muncul langsung di sini.`,
+            timestamp: Date.now() + 100,
+            timeString: formatTime(new Date()),
+            isStatus: true,
+          };
+          setMessages(prev => [...prev, waitMsg]);
+          setOptions([]);
+        }
         return;
       }
 
@@ -627,7 +661,9 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
 
       <ChatInput
         onSend={handleFreeText}
-        disabled={isTyping}
+        disabled={isTyping && !isHumanMode}
+        isHumanMode={isHumanMode}
+        placeholder={isHumanMode ? 'Ketik pesan Anda untuk petugas...' : undefined}
       />
     </div>
   );

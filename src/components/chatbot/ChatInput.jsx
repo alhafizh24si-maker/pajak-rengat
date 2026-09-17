@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const ChatInput = ({ onSend, disabled }) => {
+const ChatInput = ({ onSend, disabled, isHumanMode = false, placeholder }) => {
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(false);
@@ -44,7 +44,9 @@ const ChatInput = ({ onSend, disabled }) => {
 
   const handleSend = () => {
     const trimmed = inputValue.trim();
-    if (!trimmed || disabled) return;
+    // Saat mode live chat: input selalu bisa dikirim
+    if (!trimmed) return;
+    if (disabled && !isHumanMode) return;
     onSend(trimmed);
     setInputValue('');
   };
@@ -82,20 +84,44 @@ const ChatInput = ({ onSend, disabled }) => {
           }
         `}
       </style>
+      {/* Indikator mode live chat */}
+      {isHumanMode && (
+        <div style={{
+          padding: '4px 12px 0',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontSize: '11px',
+          color: '#059669',
+          fontWeight: 600,
+        }}>
+          <span style={{
+            width: '7px',
+            height: '7px',
+            borderRadius: '50%',
+            background: '#10B981',
+            boxShadow: '0 0 6px #10B981',
+            display: 'inline-block',
+            animation: 'micPulse 1.5s infinite',
+          }} />
+          Terhubung ke Petugas — ketik pesan Anda
+        </div>
+      )}
       <div style={{
         padding: '10px 12px 14px',
-        backgroundColor: '#FFFFFF',
-        borderTop: '1px solid #E9ECEF',
+        backgroundColor: isHumanMode ? '#F0FDF4' : '#FFFFFF',
+        borderTop: isHumanMode ? '2px solid #10B981' : '1px solid #E9ECEF',
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
+        transition: 'all 0.3s',
       }}>
         {/* Voice button */}
         {voiceSupported && (
           <button
             className="voice-btn"
             onClick={toggleVoice}
-            disabled={disabled}
+            disabled={disabled && !isHumanMode}
             title={isListening ? 'Stop mendengarkan' : 'Ketuk untuk berbicara (id-ID)'}
             style={{
               flexShrink: 0,
@@ -105,7 +131,7 @@ const ChatInput = ({ onSend, disabled }) => {
               border: 'none',
               background: isListening ? '#DC3545' : 'transparent',
               color: isListening ? '#FFF' : '#64748B',
-              cursor: disabled ? 'not-allowed' : 'pointer',
+              cursor: (disabled && !isHumanMode) ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -126,16 +152,24 @@ const ChatInput = ({ onSend, disabled }) => {
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          disabled={disabled}
-          placeholder={isListening ? '🎤 Sedang mendengarkan...' : 'Ketik pertanyaan Anda...'}
+          disabled={disabled && !isHumanMode}
+          placeholder={
+            isListening
+              ? '🎤 Sedang mendengarkan...'
+              : placeholder
+                ? placeholder
+                : isHumanMode
+                  ? 'Ketik pesan untuk petugas...'
+                  : 'Ketik pertanyaan Anda...'
+          }
           style={{
             flex: 1,
             padding: '10px 14px',
-            border: '1.5px solid #E9ECEF',
+            border: isHumanMode ? '1.5px solid #10B981' : '1.5px solid #E9ECEF',
             borderRadius: '24px',
             fontSize: '13.5px',
             color: '#1F2937',
-            backgroundColor: disabled ? '#F8F9FA' : '#FFF',
+            backgroundColor: (disabled && !isHumanMode) ? '#F8F9FA' : '#FFF',
             transition: 'border-color 0.2s, box-shadow 0.2s',
             fontFamily: 'inherit',
           }}
@@ -145,7 +179,7 @@ const ChatInput = ({ onSend, disabled }) => {
         <button
           className="send-btn"
           onClick={handleSend}
-          disabled={disabled || !inputValue.trim()}
+          disabled={(disabled && !isHumanMode) || !inputValue.trim()}
           title="Kirim"
           style={{
             flexShrink: 0,
@@ -153,7 +187,9 @@ const ChatInput = ({ onSend, disabled }) => {
             height: '38px',
             borderRadius: '50%',
             border: 'none',
-            background: 'linear-gradient(135deg, #0056B3, #002B49)',
+            background: isHumanMode
+              ? 'linear-gradient(135deg, #059669, #065F46)'
+              : 'linear-gradient(135deg, #0056B3, #002B49)',
             color: '#FFF',
             cursor: 'pointer',
             display: 'flex',
