@@ -12,7 +12,8 @@ import {
   subscribeToSessionMessages,
   unsubscribe,
   logChatMessage,
-  updateChatSession
+  updateChatSession,
+  updateTemplate
 } from '../../services/chatService';
 
 // ── Dummy Data Fallback ──
@@ -196,6 +197,7 @@ function TemplatesTab({ initialQuery = '' }) {
   const [selectedId, setSelectedId] = useState(responseTemplates[0]?.id);
   const [copied, setCopied] = useState(false);
   const [remoteTemplates, setRemoteTemplates] = useState(null);
+  const [editingTemplate, setEditingTemplate] = useState(null);
 
   useEffect(() => {
     if (initialQuery) {
@@ -236,9 +238,27 @@ function TemplatesTab({ initialQuery = '' }) {
 
   const copyTemplate = async () => {
     if (!selected) return;
-    await navigator.clipboard?.writeText(selected.template || '');
+    const formatted = (selected.template || '').replace(/\*\*/g, '\n');
+    await navigator.clipboard?.writeText(formatted);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1600);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingTemplate) return;
+    try {
+      const { data, error } = await updateTemplate(editingTemplate.id, editingTemplate);
+      if (error) throw error;
+      
+      // Update local state
+      if (remoteTemplates) {
+        setRemoteTemplates(remoteTemplates.map(t => t.id === editingTemplate.id ? { ...t, ...editingTemplate } : t));
+      }
+      setEditingTemplate(null);
+    } catch (err) {
+      console.error('Failed to update template:', err);
+      alert('Gagal menyimpan template: ' + (err.message || err.toString()));
+    }
   };
 
   return (
@@ -295,7 +315,7 @@ function TemplatesTab({ initialQuery = '' }) {
           {filtered.length === 0 && <div className="ad-empty-state p-8 text-center text-gray-400">Template tidak ditemukan.</div>}
         </div>
 
-        {selected && (
+        {selected && !editingTemplate && (
           <div className="ad-template-preview h-full overflow-y-auto">
             <div className="ad-preview-head">
               <div>
@@ -317,18 +337,49 @@ function TemplatesTab({ initialQuery = '' }) {
                 <span key={tag}>#{tag}</span>
               ))}
             </div>
-            <pre>{selected.template || ''}</pre>
+            <pre style={{ whiteSpace: 'pre-wrap' }}>{(selected.template || '').replace(/\*\*/g, '\n')}</pre>
             <div className="ad-preview-actions mt-auto pt-4 border-t border-gray-100">
               <button className="ad-primary-btn" onClick={copyTemplate}>
                 📋 {copied ? 'Tersalin' : 'Copy Jawaban'}
               </button>
               <button
                 className="ad-ghost-btn"
-                onClick={() => window.alert('Editor template siap dihubungkan ke API.')}
+                onClick={() => setEditingTemplate(selected)}
               >
                 ✏️ Edit
               </button>
               <span>{selected.usageCount || 0} kali digunakan</span>
+            </div>
+          </div>
+        )}
+
+        {editingTemplate && (
+          <div className="ad-template-preview h-full overflow-y-auto p-6 bg-white rounded-xl flex flex-col gap-4">
+            <h3 className="text-lg font-semibold">Edit Template Jawaban</h3>
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-gray-700">Judul Template</span>
+              <input 
+                type="text" 
+                className="p-2 border border-gray-300 rounded-lg"
+                value={editingTemplate.title} 
+                onChange={(e) => setEditingTemplate({...editingTemplate, title: e.target.value})} 
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-gray-700">Isi Jawaban</span>
+              <textarea 
+                className="p-3 border border-gray-300 rounded-lg font-mono text-sm min-h-[250px]"
+                value={(editingTemplate.template || '').replace(/\*\*/g, '\n')} 
+                onChange={(e) => setEditingTemplate({...editingTemplate, template: e.target.value.replace(/\n/g, '**')})} 
+              />
+            </label>
+            <div className="flex gap-3 mt-auto pt-4 border-t border-gray-100">
+              <button className="ad-primary-btn" onClick={handleSaveEdit}>
+                Simpan
+              </button>
+              <button className="ad-ghost-btn" onClick={() => setEditingTemplate(null)}>
+                Batal
+              </button>
             </div>
           </div>
         )}

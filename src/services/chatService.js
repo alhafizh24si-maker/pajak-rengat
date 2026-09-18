@@ -289,6 +289,31 @@ export async function getTemplates({ search = '', category = 'Semua', favorite =
   return { templates: error || !data ? responseTemplates : data.map(normalizeTemplate), error };
 }
 
+export async function updateTemplate(id, updates) {
+  if (!supabase || id.startsWith('TPL-')) {
+    // Fallback if no Supabase or if editing a mock template: just return mock success
+    console.warn('Menggunakan mock update untuk template:', id);
+    const index = responseTemplates.findIndex(t => t.id === id);
+    if (index !== -1) {
+      responseTemplates[index] = { ...responseTemplates[index], ...updates };
+    }
+    return { data: { id, ...updates }, error: null };
+  }
+  
+  const payload = {};
+  if (updates.title !== undefined) payload.title = updates.title;
+  if (updates.category !== undefined) payload.category = updates.category;
+  if (updates.tags !== undefined) payload.keywords = updates.tags;
+  if (updates.template !== undefined) payload.content = updates.template;
+  
+  const { data, error } = await supabase.from('templates').update(payload).eq('id', id).select();
+  if (error) {
+    console.error('Supabase update error:', error, 'Payload:', payload, 'ID:', id);
+  }
+  return { data: error || !data ? null : data.map(normalizeTemplate)[0], error };
+
+}
+
 export async function getSessionMessages(sessionId) {
   if (!supabase) return [];
   const { data, error } = await supabase.from('chat_messages').select('*').eq('session_id', sessionId).order('created_at', { ascending: true });
@@ -308,10 +333,6 @@ export async function createTemplate(template) {
   return supabase.from('templates').insert({ title: template.title, category: template.category, content: template.content, keywords: template.keywords, priority: template.priority, is_favorite: template.isFavorite, is_active: true }).select().single();
 }
 
-export async function updateTemplate(id, template) {
-  if (!supabase) throw new Error('Supabase belum dikonfigurasi');
-  return supabase.from('templates').update({ title: template.title, category: template.category, content: template.content, keywords: template.keywords, priority: template.priority }).eq('id', id).select().single();
-}
 
 export async function deleteTemplate(id) {
   if (!supabase) throw new Error('Supabase belum dikonfigurasi');
