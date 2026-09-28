@@ -38,6 +38,42 @@
   --transition-slow: 0.4s ease;
 }
 
+[data-theme='dark'] {
+  --bg-main: #0F172A;
+  --card-bg: #1E293B;
+  --text-main: #F8FAFC;
+  --text-muted: #CBD5E1;
+  --text-light: #94A3B8;
+  --border-color: #334155;
+  --border-light: #0F172A;
+  --green-soft: rgba(5, 150, 105, 0.2);
+  --red-soft: rgba(220, 38, 38, 0.2);
+  --purple-soft: rgba(124, 58, 237, 0.2);
+  --blue-soft: rgba(59, 130, 246, 0.15);
+  --yellow-soft: rgba(255, 199, 0, 0.1);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.7);
+}
+
+[data-theme='dark'] .service-item h3,
+[data-theme='dark'] .news-card h3,
+[data-theme='dark'] .quick-link-title,
+[data-theme='dark'] .section-title-center,
+[data-theme='dark'] .section-title-inline,
+[data-theme='dark'] .stat-number,
+[data-theme='dark'] .flow-step-title,
+[data-theme='dark'] .ops-card-header h3,
+[data-theme='dark'] .accordion-header h4,
+[data-theme='dark'] .contact-card-label {
+  color: #F8FAFC !important;
+}
+
+[data-theme='dark'] .service-cta-btn {
+  background-color: var(--card-bg);
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body,
@@ -702,7 +738,9 @@ html,
 .service-card-body h3 { font-size: 15px; color: var(--djp-blue-dark); font-weight: 700; line-height: 1.35; margin: 8px 0 6px 0; }
 .service-card-body p { font-size: 13px; color: var(--text-muted); line-height: 1.55; flex: 1; margin-bottom: 0; }
 .service-card-body .service-cta-btn { margin-top: 14px; align-self: flex-start; }
-.interactive-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--djp-blue-light); }
+.interactive-card { transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.4s ease; }
+.interactive-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12), 0 0 20px rgba(255, 199, 0, 0.15); border-color: var(--djp-yellow); z-index: 10; position: relative; }
+[data-theme='dark'] .interactive-card:hover { box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 199, 0, 0.1); }
 .service-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
 .service-badge-tag { font-size: 10px; text-transform: uppercase; background-color: var(--blue-soft); color: var(--djp-blue-primary); padding: 3px 9px; border-radius: 6px; font-weight: 700; letter-spacing: 0.5px; }
 .service-item h3 { font-size: 16px; color: var(--djp-blue-dark); font-weight: 700; line-height: 1.3; }
