@@ -22,6 +22,7 @@ import {
   detectCategory,
   detectPriority,
 } from '../../lib/knowledgeBase';
+import { askGemini } from '../../lib/gemini';
 
 const INITIAL_GREETING = {
   sender: 'BOT',
@@ -406,49 +407,19 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
         return;
       }
 
-      if (result.type === 'WEAK_MATCH') {
-        await addBotMessage(fallbackResponses.weakMatch(result.suggestions), {
-          category: 'Konsultasi',
-          priority: 'P4',
-        });
-        setNoMatchCount(prev => prev + 1);
-        return;
-      }
-
-      const newCount = noMatchCount + 1;
-      setNoMatchCount(newCount);
-
-      if (newCount >= 3) {
-        await addBotMessage(fallbackResponses.repeatedNoMatch, {
-          category: 'Konsultasi',
-          priority: 'P2',
-        });
-
-        if (sessionId) {
-          await createNotification({
-            eventType: 'escalation',
-            sessionId,
-            title: 'Chat Perlu Perhatian',
-            message: `Wajib pajak mengalami 3x no-match. Session: ${sessionId}`,
-            channels: ['push', 'email'],
-          });
-
-          await updateChatSession(sessionId, { status: 'escalated' });
-        }
-
-        // ⚡ REDIRECT KE WHATSAPP (Setelah 3x tidak ada kecocokan jawaban)
-        setTimeout(() => {
-          redirectToWhatsApp(`Halo Admin KPP Pratama Rengat, saya memiliki pertanyaan yang membutuhkan jawaban langsung dari petugas (Sesi: ${sessionId}): "${text}"`);
-        }, 1500);
-
-      } else {
-        await addBotMessage(fallbackResponses.noMatch, {
-          category: 'Konsultasi',
-          priority: 'P4',
-        });
-        fetchOptions(null);
-        setBreadcrumb([{ id: null, label: 'Beranda' }]);
-      }
+      // INTEGRASI GEMINI AI
+      // Jika pertanyaan tidak ada di Knowledge Base statis (KNOWLEDGE_MATCH),
+      // kita serahkan ke Gemini AI untuk menjawab secara natural.
+      const aiResponse = await askGemini(text);
+      
+      await addBotMessage(aiResponse, {
+        category: 'Konsultasi AI',
+        priority: 'P3',
+      });
+      
+      // Tetap kembalikan opsi menu beranda di bawah jawaban AI
+      fetchOptions(null);
+      setBreadcrumb([{ id: null, label: 'Beranda' }]);
     }, delay);
   };
 
