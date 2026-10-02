@@ -36,10 +36,18 @@ BEGIN
     ALTER TABLE public.chat_sessions ALTER COLUMN session_id TYPE TEXT USING session_id::text;
     ALTER TABLE public.chat_messages ALTER COLUMN session_id TYPE TEXT USING session_id::text;
 
-    -- 3. UBAH TIPE DATA template_id MENJADI TEXT (Ini yang menyebabkan error uuid = text yang terakhir!)
+    -- 3. UBAH TIPE DATA template_id MENJADI TEXT
+    -- Hapus FK untuk template_id terlebih dahulu jika ada
+    IF EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE constraint_schema = 'public' AND table_name = 'chat_messages' AND constraint_name = 'chat_messages_template_id_fkey'
+    ) THEN
+        ALTER TABLE public.chat_messages DROP CONSTRAINT chat_messages_template_id_fkey;
+    END IF;
+
     ALTER TABLE public.chat_messages ALTER COLUMN template_id TYPE TEXT USING template_id::text;
 
-    -- 4. Pasang kembali Foreign Key
+    -- 4. Pasang kembali Foreign Key untuk session_id saja
     ALTER TABLE public.chat_messages 
         ADD CONSTRAINT chat_messages_session_id_fkey 
         FOREIGN KEY (session_id) REFERENCES public.chat_sessions(session_id) ON DELETE CASCADE;
