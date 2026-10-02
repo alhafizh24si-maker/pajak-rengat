@@ -58,7 +58,7 @@
     { label: 'Telepon KPP', value: '(0769) 321234', icon: '📞', link: 'tel:0769321234' },
     { label: 'Fax', value: '(0769) 321235', icon: '📠', link: null },
     { label: 'Email Resmi', value: 'kpp.rengat@pajak.go.id', icon: '✉️', link: 'mailto:kpp.rengat@pajak.go.id' },
-    { label: 'WhatsApp', value: '0812-XXXX-XXXX', icon: '💬', link: 'https://wa.me/62812XXXXXXXX' },
+    { label: 'WhatsApp', value: '0812-5000-213', icon: '💬', link: 'https://wa.me/628125000213' },
   ];
   export const slaMetrics = [
     { label: 'Respons Pertama (Bot)', value: '< 3 detik', icon: '⚡', color: '#2563EB' },
@@ -69,7 +69,7 @@
     { label: 'Notifikasi Petugas', value: 'Real-time Push', icon: '🔔', color: '#0891B2' },
   ];
   export const verifiedChannels = [
-    { platform: 'WhatsApp Resmi', handle: '0812-XXXX-XXXX', note: 'Satu-satunya nomor WA resmi KPP Pratama Rengat', icon: '💬' },
+    { platform: 'WhatsApp Resmi', handle: '0812-5000-213', note: 'Satu-satunya nomor WA resmi KPP Pratama Rengat', icon: '💬' },
     { platform: 'Email Resmi', handle: 'kpp.rengat@pajak.go.id', note: 'Hanya domain @pajak.go.id yang sah', icon: '✉️' },
     { platform: 'Telepon Kantor', handle: '(0769) 321234', note: 'Konfirmasi langsung ke front office', icon: '📞' },
     { platform: 'Instagram Resmi', handle: '@kpp_pratama_rengat', note: 'Akun terverifikasi badge biru DJP', icon: '📸' },

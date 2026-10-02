@@ -1,33 +1,24 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-// Pastikan Anda menambahkan VITE_GEMINI_API_KEY di file .env
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
-const genAI = new GoogleGenerativeAI(apiKey);
-
 export const askGemini = async (question) => {
-  if (!apiKey) {
-    return "⚠️ API Key Gemini AI belum dikonfigurasi. Silakan tambahkan `VITE_GEMINI_API_KEY` di file .env Anda.";
-  }
-
   try {
-    // Menggunakan model Gemini 3.8 Flash yang cepat
-    const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
+    // Memanggil API backend (Vercel Serverless Function) 
+    // agar API Key tidak terekspos di frontend
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ question }),
+    });
 
-    // Sistem prompt untuk mengarahkan AI agar bertindak sebagai asisten KPP
-    const prompt = `Anda adalah Asisten Virtual (Chatbot) AI resmi untuk KPP Pratama Rengat.
-Tugas Anda adalah menjawab pertanyaan seputar perpajakan di Indonesia dari Wajib Pajak dengan ramah, jelas, ringkas, dan akurat.
-Aturan:
-1. Jawab menggunakan Bahasa Indonesia yang mudah dipahami (tidak terlalu kaku).
-2. Jika pertanyaan di luar konteks perpajakan, tolak dengan halus dan katakan Anda hanya bisa menjawab soal pajak.
-3. Selalu sarankan untuk berkonsultasi langsung dengan petugas atau Account Representative (AR) untuk hal yang bersifat sangat teknis/pribadi.
-    
-Pertanyaan Wajib Pajak: "${question}"`;
+    const data = await res.json();
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+    if (!res.ok) {
+      throw new Error(data.error || "Gagal menghubungi server AI.");
+    }
+
+    return data.answer;
   } catch (error) {
-    console.error("Error dari Gemini AI:", error);
-    return `Maaf, sistem AI kami sedang mengalami gangguan teknis. Error details: ${error.message}`;
+    console.error("Error dari API Chat:", error);
+    return `Maaf, terjadi kesalahan saat menghubungi server kami: ${error.message}`;
   }
 };

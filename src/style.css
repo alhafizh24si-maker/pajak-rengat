@@ -1093,3 +1093,71 @@ button:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline: none; }
   .service-grid, .news-grid { grid-template-columns: repeat(2, 1fr); }
   .service-item, .news-card { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
 }
+
+/* TAMBAHAN UNTUK FIX FONT DARK MODE */
+[data-theme='dark'] .service-item p,
+[data-theme='dark'] .news-card p,
+[data-theme='dark'] .news-summary,
+[data-theme='dark'] .section-subtitle-center,
+[data-theme='dark'] .section-desc-inline,
+[data-theme='dark'] .stat-label,
+[data-theme='dark'] .flow-step-desc,
+[data-theme='dark'] .accordion-body p,
+[data-theme='dark'] .ops-address,
+[data-theme='dark'] .ops-address p,
+[data-theme='dark'] .ops-schedule span,
+[data-theme='dark'] .mission-item span,
+[data-theme='dark'] .contact-card-value,
+[data-theme='dark'] .verification-card-info,
+[data-theme='dark'] .verification-handle,
+[data-theme='dark'] .verification-note,
+[data-theme='dark'] .footer-about,
+[data-theme='dark'] .footer-social-desc {
+  color: var(--text-muted) !important;
+}
+
+[data-theme='dark'] .accordion-header h4 {
+  color: #F8FAFC !important;
+}
+
+/* TAMBAHAN KEDUA UNTUK FIX FONT DARK MODE */
+[data-theme='dark'] .search-dropdown-header span,
+[data-theme='dark'] .search-dropdown-header strong,
+[data-theme='dark'] .search-dropdown-section-title,
+[data-theme='dark'] .search-item-title span,
+[data-theme='dark'] .search-item-desc,
+[data-theme='dark'] .search-dropdown-item p,
+[data-theme='dark'] .empty-state p,
+[data-theme='dark'] .modal-scam-body p,
+[data-theme='dark'] .modal-scam-body strong,
+[data-theme='dark'] .modal-scam-warning,
+[data-theme='dark'] .modal-scam-item div span,
+[data-theme='dark'] .modal-scam-item div strong,
+[data-theme='dark'] .address-main,
+[data-theme='dark'] .address-postal,
+[data-theme='dark'] .ops-time,
+[data-theme='dark'] .ops-day,
+[data-theme='dark'] .accordion-number,
+[data-theme='dark'] .search-input,
+[data-theme='dark'] .news-date {
+  color: var(--text-main) !important;
+}
+
+[data-theme='dark'] .search-chip,
+[data-theme='dark'] .search-see-all-btn,
+[data-theme='dark'] .reset-search-btn {
+  color: var(--text-muted) !important;
+}
+
+[data-theme='dark'] .warning-board-content p,
+[data-theme='dark'] .warning-board-content h3 {
+  color: #FCA5A5 !important; /* light red for warning */
+}
+
+/* Chatbot override for dark mode */
+[data-theme='dark'] .chatbot-message,
+[data-theme='dark'] .chatbot-header,
+[data-theme='dark'] .chatbot-option-btn,
+[data-theme='dark'] .chatbot-input {
+  color: var(--text-main);
+}

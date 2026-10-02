@@ -3,7 +3,7 @@ import React, { useState } from "react";
 const FloatingWhatsApp = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
-  const waNumber = '6281234567890'; // Ganti dengan nomor WhatsApp tujuan
+  const waNumber = '628125000213'; // Ganti dengan nomor WhatsApp tujuan
 
   const handleSend = () => {
     if (message.trim()) {
