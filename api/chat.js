@@ -21,7 +21,7 @@ export default async function handler(req, res) {
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `Anda adalah Asisten Virtual (Chatbot) AI resmi untuk KPP Pratama Rengat.
 Tugas Anda adalah menjawab pertanyaan seputar perpajakan di Indonesia dari Wajib Pajak dengan ramah, jelas, ringkas, dan akurat.
