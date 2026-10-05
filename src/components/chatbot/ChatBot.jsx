@@ -410,12 +410,22 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
       // INTEGRASI GEMINI AI
       // Jika pertanyaan tidak ada di Knowledge Base statis (KNOWLEDGE_MATCH),
       // kita serahkan ke Gemini AI untuk menjawab secara natural.
-      const aiResponse = await askGemini(text);
-      
-      await addBotMessage(aiResponse, {
-        category: 'Konsultasi AI',
-        priority: 'P3',
-      });
+      setIsTyping(true);
+      try {
+        const aiResponse = await askGemini(text, messages);
+        setIsTyping(false);
+        await addBotMessage(aiResponse, {
+          category: 'Konsultasi AI',
+          priority: 'P3',
+        });
+      } catch (err) {
+        console.error('Error invoking Gemini:', err);
+        setIsTyping(false);
+        await addBotMessage('Maaf, terjadi gangguan saat menghubungi asisten AI. Silakan coba beberapa saat lagi.', {
+          category: 'Konsultasi AI',
+          priority: 'P3',
+        });
+      }
       
       // Tetap kembalikan opsi menu beranda di bawah jawaban AI
       fetchOptions(null);
