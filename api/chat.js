@@ -1,22 +1,21 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const CANDIDATE_MODELS = [
+  "gemini-3.5-flash-lite",
+  "gemini-3.5-flash",
   "gemini-flash-latest",
   "gemini-3.8-flash",
-  "gemini-3.5-flash",
-  "gemini-3.6-flash",
-  "gemini-3.7-flash",
   "gemini-flash-lite-latest",
 ];
 
 const SYSTEM_INSTRUCTION = `Anda adalah Asisten Virtual (Chatbot) AI resmi untuk KPP Pratama Rengat (Direktorat Jenderal Pajak).
-Tugas Anda adalah melayani dan menjawab pertanyaan Wajib Pajak seputar perpajakan di Indonesia (NPWP, Coretax, SPT Tahunan/Masa, Kode Billing, PPh, PPN, SKB, dll.) secara ramah, informatif, ringkas, dan akurat.
+Tugas Anda adalah melayani dan menjawab pertanyaan Wajib Pajak seputar perpajakan di Indonesia (NPWP, Coretax, SPT Tahunan/Masa, Kode Billing, PPh, PPN, SKB, dll.) secara ramah, informatif, ringkas, dan akurat dalam Bahasa Indonesia.
 
-Panduan Jawaban:
-1. Berikan penjelasan yang ramah, sopan, dan mudah dipahami oleh Wajib Pajak awam.
-2. Gunakan format poin-poin atau bold jika membantu memperjelas langkah-langkah.
-3. Jika pertanyaan sepenuhnya di luar konteks perpajakan atau keuangan negara, tolak dengan halus dan jelaskan bahwa Anda dikhususkan untuk melayani pertanyaan perpajakan KPP Pratama Rengat.
-4. Untuk permohonan yang membutuhkan verifikasi data pribadi/rahasia (seperti cetak ulang kartu NPWP resmi, pengecekan data spesifik, atau sengketa pajak), arahkan Wajib Pajak untuk menghubungi Account Representative (AR) atau loket TPT KPP Pratama Rengat.`;
+Aturan:
+1. Berikan jawaban langsung, ramah, dan sopan kepada Wajib Pajak tanpa menampilkan evaluasi atau catatan internal sistem.
+2. Gunakan poin-poin yang mudah dipahami bila menjelaskan langkah atau persyaratan.
+3. Jika pertanyaan sepenuhnya di luar konteks perpajakan atau keuangan, tolak dengan sopan dan jelaskan bahwa Anda dikhususkan untuk melayani pertanyaan perpajakan.
+4. Untuk permohonan data pribadi/rahasia atau sengketa pajak, sarankan untuk berkonsultasi langsung dengan Account Representative (AR) di KPP Pratama Rengat.`;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -40,7 +39,7 @@ export default async function handler(req, res) {
       .slice(-4);
     if (recent.length > 0) {
       conversationContext =
-        "\nKonteks percakapan sebelumnya:\n" +
+        "Konteks percakapan sebelumnya:\n" +
         recent
           .map((m) => `${m.sender === "USER" ? "Wajib Pajak" : "Asisten AI"}: ${m.text}`)
           .join("\n") +
@@ -48,9 +47,9 @@ export default async function handler(req, res) {
     }
   }
 
-  const fullPrompt = `${SYSTEM_INSTRUCTION}
-
-${conversationContext}Pertanyaan Wajib Pajak: "${question.trim()}"`;
+  const userPrompt = conversationContext
+    ? `${conversationContext}Pertanyaan Wajib Pajak: "${question.trim()}"`
+    : question.trim();
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -60,12 +59,13 @@ ${conversationContext}Pertanyaan Wajib Pajak: "${question.trim()}"`;
       try {
         const model = genAI.getGenerativeModel({
           model: modelName,
+          systemInstruction: SYSTEM_INSTRUCTION,
           generationConfig: {
             temperature: 0.7,
             maxOutputTokens: 1024,
           }
         });
-        const result = await model.generateContent(fullPrompt);
+        const result = await model.generateContent(userPrompt);
         const response = await result.response;
         const text = response.text();
         if (text && text.trim().length > 0) {
