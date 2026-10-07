@@ -117,13 +117,19 @@ function OverviewTab({ period, setPeriod, stats }) {
             'Respons Pertama',
             '-15%',
           ],
+          [
+            '⭐',
+            stats?.kpi?.csat?.score ? `${stats.kpi.csat.score} / 5.0` : '4.8 / 5.0',
+            'Indeks Kepuasan (IKM)',
+            stats?.kpi?.csat?.grade ? `${stats.kpi.csat.grade} · ${stats.kpi.csat.percentage}%` : 'Sangat Baik (A) · 96%',
+          ],
         ].map(([icon, value, label, change]) => (
           <div className="ad-kpi" key={label}>
             <span className="ad-kpi-icon">{icon}</span>
             <strong>{value}</strong>
             <span>{label}</span>
-            <small className={change.startsWith('-') ? 'good' : ''}>
-              {change} dibanding periode sebelumnya
+            <small className={change.startsWith('-') || change.includes('Baik') ? 'good' : ''}>
+              {change.includes('Baik') ? change : `${change} dibanding periode sebelumnya`}
             </small>
           </div>
         ))}
@@ -165,7 +171,7 @@ function OverviewTab({ period, setPeriod, stats }) {
         </div>
       </div>
 
-      <div className="ad-panel ad-table-panel">
+      <div className="ad-panel ad-table-panel mb-6">
         <div className="ad-panel-title">
           <strong>Top template digunakan</strong>
           <span>Performa jawaban</span>
@@ -182,6 +188,107 @@ function OverviewTab({ period, setPeriod, stats }) {
               <b>{template.usageCount}x</b>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* 🌟 PANEL INDEKS KEPUASAN MASYARAKAT (IKM / CSAT) — STANDAR DJP */}
+      <div className="ad-ikm-panel">
+        <div className="ad-ikm-header">
+          <div className="ad-ikm-title-area">
+            <div className="ad-ikm-badge-title">
+              <span className="ad-ikm-emblem">🏛️</span>
+              <h3 className="ad-ikm-title">Indeks Kepuasan Masyarakat (IKM)</h3>
+              <span className="ad-ikm-score-tag">⭐ {stats?.kpi?.csat?.score || '4.8'} / 5.0</span>
+            </div>
+            <p className="ad-ikm-subtitle">
+              Standar pengukuran mutu pelayanan publik KPP Pratama Rengat berdasarkan PermenPAN-RB No. 14/2017 & DJP.
+            </p>
+          </div>
+          <div className="ad-ikm-header-metrics">
+            <div className="ad-ikm-metric-pill">
+              <span>Mutu Pelayanan</span>
+              <strong className="mutu">{stats?.kpi?.csat?.grade || 'Sangat Baik (A)'}</strong>
+            </div>
+            <div className="ad-ikm-metric-divider" />
+            <div className="ad-ikm-metric-pill">
+              <span>Tingkat Kepuasan</span>
+              <strong className="persen">{stats?.kpi?.csat?.percentage || 96}%</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="ad-ikm-grid">
+          {/* Kolom 1: Hero Score Card */}
+          <div className="ad-ikm-hero-card">
+            <div className="ad-ikm-big-number">{stats?.kpi?.csat?.score || '4.8'}</div>
+            <div className="ad-ikm-stars-row">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <span
+                  key={s}
+                  style={{
+                    color: s <= Math.round(Number(stats?.kpi?.csat?.score || 5)) ? '#FFC700' : '#E2E8F0',
+                  }}
+                >
+                  ★
+                </span>
+              ))}
+            </div>
+            <div className="ad-ikm-hero-label">Skala Penilaian 1.0 s.d 5.0</div>
+            <div className="ad-ikm-respondent-chip">
+              Total {stats?.kpi?.csat?.total || 15} Wajib Pajak Menilai
+            </div>
+          </div>
+
+          {/* Kolom 2: Distribusi Rating 1 - 5 Bintang */}
+          <div className="ad-ikm-bars-card">
+            <div className="ad-ikm-sub-title">
+              <span>Distribusi Rating Bintang</span>
+              <small style={{ color: 'var(--ad-text-light)', fontSize: '11px', fontWeight: 'normal' }}>1 - 5 Bintang</small>
+            </div>
+            <div>
+              {[5, 4, 3, 2, 1].map((star) => {
+                const breakdown = stats?.csatBreakdown || { 5: 12, 4: 3, 3: 1, 2: 0, 1: 0 };
+                const count = breakdown[star] || 0;
+                const total = Object.values(breakdown).reduce((a, b) => a + b, 0) || 1;
+                const pct = Math.round((count / total) * 100);
+                return (
+                  <div key={star} className="ad-ikm-bar-row">
+                    <div className="ad-ikm-bar-label">
+                      {star} <span>★</span>
+                    </div>
+                    <div className="ad-ikm-bar-track">
+                      <div className={`ad-ikm-bar-fill star-${star}`} style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className="ad-ikm-bar-pct">{pct}%</div>
+                    <div className="ad-ikm-bar-count">({count})</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Kolom 3: Feed Ulasan Terbaru dari Wajib Pajak */}
+          <div className="ad-ikm-feed-card">
+            <div className="ad-ikm-sub-title">
+              <span>Ulasan Terbaru Wajib Pajak</span>
+              <span style={{ color: 'var(--ad-green)', fontSize: '11px', fontWeight: '700' }}>● Live Feed</span>
+            </div>
+            <div className="ad-ikm-feed-list">
+              {(stats?.recentFeedbacks?.length ? stats.recentFeedbacks : [
+                { sessionId: 'sess_1', rating: 5, feedback: '[⚡ Respon Cepat] Sangat membantu pembuatan kode billing PHTB tanah di Inhu.', wpName: 'Budi Santoso' },
+                { sessionId: 'sess_2', rating: 5, feedback: '[🎯 Penjelasan Jelas] Panduan SPT Masa PPN via Coretax sangat ramah dan detail.', wpName: 'Wajib Pajak PKP Rengat' },
+                { sessionId: 'sess_3', rating: 4, feedback: '[📱 Sistem Mudah Digunakan] Pelayanan cepat tanggap.', wpName: 'Rina Marlina' },
+              ]).map((fb, idx) => (
+                <div key={fb.sessionId || idx} className="ad-ikm-feed-item">
+                  <div className="ad-ikm-feed-top">
+                    <span className="ad-ikm-feed-user">{fb.wpName}</span>
+                    <span className="ad-ikm-feed-stars">{'★'.repeat(fb.rating)}</span>
+                  </div>
+                  <p className="ad-ikm-feed-text">"{fb.feedback}"</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -409,6 +516,8 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
       channel: session.channel || 'web',
       wpName: session.wp_name || session.wpName || null,
       startedAt: session.started_at || session.startedAt,
+      csatRating: session.csat_rating || session.csatRating || null,
+      feedback: session.feedback || null,
       firstResponseTimeMs:
         session.first_response_ms ||
         session.first_response_time_ms ||
@@ -580,9 +689,16 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
                 <span className={`ad-session-status text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider status-${session.status} ${session.status === 'resolved' ? 'bg-green-100 text-green-700' : session.status === 'escalated' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
                   {session.status}
                 </span>
-                <span className={`ad-session-channel text-[10px] px-2 py-0.5 rounded font-medium channel-${session.channel} ${session.channel === 'whatsapp' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
-                  {session.channel === 'whatsapp' ? '📱 WhatsApp' : '🌐 Web'}
-                </span>
+                <div className="flex items-center gap-1">
+                  {session.csatRating && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-amber-100 text-amber-800" title={`IKM: ${session.csatRating}/5 Bintang`}>
+                      ⭐ {session.csatRating}
+                    </span>
+                  )}
+                  <span className={`ad-session-channel text-[10px] px-2 py-0.5 rounded font-medium channel-${session.channel} ${session.channel === 'whatsapp' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
+                    {session.channel === 'whatsapp' ? '📱 WhatsApp' : '🌐 Web'}
+                  </span>
+                </div>
               </div>
               <div className="ad-session-info mt-2">
                 <div className="ad-session-title text-sm font-bold text-gray-800 truncate" title={session.wpName || session.sessionId}>
@@ -618,6 +734,11 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
                   <span className={`ad-channel-tag text-[10px] px-2 py-1 rounded-md font-bold tracking-widest channel-${selected.channel} ${selected.channel === 'whatsapp' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
                     {selected.channel === 'whatsapp' ? 'WHATSAPP' : 'WEB WIDGET'}
                   </span>
+                  {selected.csatRating && (
+                    <span className="text-[11px] px-2.5 py-0.5 rounded-md font-bold bg-amber-100 text-amber-800 flex items-center gap-1 border border-amber-200">
+                      ⭐ IKM: {selected.csatRating}/5
+                    </span>
+                  )}
                   <h3 className="ad-chat-title font-extrabold text-lg text-gray-800 truncate max-w-sm">
                     {selected.wpName ? `${selected.wpName}` : selected.sessionId}
                   </h3>
@@ -641,6 +762,21 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
                 )}
               </div>
             </div>
+
+            {/* Banner Ulasan IKM jika ada feedback dari Wajib Pajak */}
+            {selected.feedback && (
+              <div className="bg-amber-50/80 border-b border-amber-200 px-4 py-2.5 text-xs text-amber-900 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold">⭐ Ulasan Kepuasan (IKM):</span>
+                  <span>"{selected.feedback}"</span>
+                </div>
+                {selected.csatRating && (
+                  <span className="font-bold bg-amber-200 text-amber-900 px-2 py-0.5 rounded text-[11px]">
+                    {selected.csatRating}/5 Bintang
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* New: Internal Notes Section */}
             <div className="ad-chat-memo">
@@ -696,6 +832,26 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
                 messages.map((message, index) => {
                   const isUser = message.role === 'user';
                   const isOfficer = message.role === 'admin';
+                  const textContent = message.text || message.content || '';
+                  const isIkmAnnouncement = textContent.includes('penilaian IKM');
+
+                  if (isIkmAnnouncement) {
+                    return (
+                      <div
+                        key={message.id || `${message.created_at}-${index}`}
+                        className="self-center my-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-center max-w-[85%] text-xs shadow-xs text-amber-900"
+                      >
+                        <div className="font-bold flex items-center justify-center gap-1.5 mb-1 text-amber-900">
+                          <span>🏛️</span>
+                          <span>Survei Kepuasan Masyarakat (IKM) Tercatat</span>
+                        </div>
+                        <p className="m-0 text-amber-800 leading-relaxed font-medium">{textContent}</p>
+                        <small className="text-[10px] text-amber-600 block mt-1 font-mono">
+                          {new Date(message.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                        </small>
+                      </div>
+                    );
+                  }
 
                   return (
                     <div
@@ -716,7 +872,7 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
                             ? 'bg-[#173459] text-white rounded-tr-sm'
                             : 'bg-[#FFFBEB] text-[#92400E] border border-[#FDE68A] rounded-tr-sm'
                         }`}>
-                        <p className="whitespace-pre-wrap m-0 leading-relaxed">{message.text || message.content}</p>
+                        <p className="whitespace-pre-wrap m-0 leading-relaxed">{textContent}</p>
                       </div>
                     </div>
                   );

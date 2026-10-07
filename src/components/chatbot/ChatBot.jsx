@@ -3,6 +3,7 @@ import ChatHeader from './ChatHeader';
 import ChatMessageList from './ChatMessageList';
 import OptionButtons from './OptionButtons';
 import ChatInput from './ChatInput';
+import SatisfactionSurveyModal from './SatisfactionSurveyModal';
 import { supabase } from '../../lib/supabase';
 import {
   logChatMessage,
@@ -12,6 +13,8 @@ import {
   generateSessionId,
   createNotification,
   subscribeToSessionMessages,
+  subscribeToSessionStatus,
+  submitSatisfactionSurvey,
   unsubscribe,
 } from '../../services/chatService';
 import {
@@ -56,6 +59,10 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
   const [sessionId, setSessionId] = useState(null);
   // Mode live chat dengan petugas (aktif setelah pilih opsi 6 di web)
   const [isHumanMode, setIsHumanMode] = useState(false);
+
+  // 🌟 State Survei Kepuasan Layanan (IKM / CSAT Rating)
+  const [showSurvey, setShowSurvey] = useState(false);
+  const [hasRated, setHasRated] = useState(false);
 
   const [breadcrumb, setBreadcrumb] = useState([{ id: null, label: 'Beranda' }]);
   const [context, setContext] = useState({
@@ -123,7 +130,13 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
       const savedSession = localStorage.getItem('kpp_rengat_session_id');
 
       if (savedSession) {
+        if (localStorage.getItem(`kpp_rengat_rated_${savedSession}`)) {
+          setHasRated(true);
+        }
         const { data: existingSession } = await getChatSession(savedSession);
+        if (existingSession && existingSession.csat_rating != null) {
+          setHasRated(true);
+        }
         if (existingSession && existingSession.status === 'active') {
           setSessionId(savedSession);
           return;
@@ -185,6 +198,34 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
       if (channel) unsubscribe(channel);
     };
   }, [sessionId, playNotificationSound, onNewBotMessage]);
+
+  // ⚡ REAL-TIME: Berlangganan status sesi (otomatis munculkan Survei IKM saat Admin klik "✓ Selesai")
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const statusChannel = subscribeToSessionStatus(sessionId, (updatedSession) => {
+      if (!updatedSession) return;
+      if (updatedSession.status === 'resolved' && !hasRated) {
+        setIsHumanMode(false);
+        const resolvedNotice = {
+          sender: 'BOT',
+          text: '✅ Percakapan telah diselesaikan oleh Petugas KPP Pratama Rengat.\n\nMohon luangkan waktu sejenak untuk mengisi **Survei Kepuasan Layanan (IKM)** di bawah ini demi peningkatan kualitas layanan kami 🙏',
+          timestamp: Date.now(),
+          timeString: formatTime(new Date()),
+        };
+        setMessages((prev) => {
+          const exists = prev.some((m) => m.text && m.text.includes('diselesaikan oleh Petugas'));
+          if (exists) return prev;
+          return [...prev, resolvedNotice];
+        });
+        setShowSurvey(true);
+      }
+    });
+
+    return () => {
+      if (statusChannel) unsubscribe(statusChannel);
+    };
+  }, [sessionId, hasRated]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -346,6 +387,21 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
       await updateChatSession(sessionId, {
         primary_category: detectedCategory,
       });
+    }
+
+    // ⚡ CEK MODE HUMAN: Jika sedang antrean / live chat dengan petugas manusia,
+    // jangan panggil AI Gemini atau Knowledge Base bot secara otomatis!
+    if (isHumanMode) {
+      setIsTyping(false);
+      if (sessionId) {
+        createNotification({
+          eventType: 'human_message',
+          sessionId,
+          title: 'Pesan Baru Wajib Pajak (Live Chat)',
+          message: text.slice(0, 100),
+        });
+      }
+      return;
     }
 
     const delay = Math.floor(Math.random() * (1200 - 600 + 1) + 600);
@@ -535,7 +591,33 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
     fetchOptions(target.id);
   };
 
+  const handleSurveySubmit = async (surveyData) => {
+    await submitSatisfactionSurvey({
+      sessionId: surveyData.sessionId || sessionId,
+      rating: surveyData.rating,
+      feedback: surveyData.feedback,
+      tags: surveyData.tags,
+    });
+    setHasRated(true);
+    if (sessionId) {
+      localStorage.setItem(`kpp_rengat_rated_${sessionId}`, 'true');
+    }
+    const thankMsg = {
+      sender: 'BOT',
+      text: `⭐ Terima kasih atas penilaian ${surveyData.rating}/5 Bintang Anda! Masukan Anda sangat berarti bagi peningkatan mutu layanan KPP Pratama Rengat.`,
+      timestamp: Date.now(),
+      timeString: formatTime(new Date()),
+    };
+    setMessages((prev) => [...prev, thankMsg]);
+  };
+
   const handleClearChat = async () => {
+    // Jika ada riwayat percakapan dan belum pernah memberi rating, tawarkan survei IKM terlebih dahulu
+    if (messages.length > 2 && !hasRated && !showSurvey) {
+      setShowSurvey(true);
+      return;
+    }
+
     localStorage.removeItem('kpp_rengat_chat_history');
     localStorage.removeItem('kpp_rengat_session_id');
 
@@ -545,6 +627,10 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
         resolution_time_ms: Date.now() - new Date().getTime(),
       });
     }
+
+    setHasRated(false);
+    setShowSurvey(false);
+    setIsHumanMode(false);
 
     const msg = { ...INITIAL_GREETING, timeString: formatTime(new Date()) };
     setMessages([msg]);
@@ -563,11 +649,57 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', backgroundColor: '#F8F9FA' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', backgroundColor: '#F8F9FA', position: 'relative' }}>
       <ChatHeader
         onMinimize={onMinimize}
         onClose={onClose}
         onClearChat={handleClearChat}
+        onOpenSurvey={() => setShowSurvey(true)}
+      />
+
+      {/* Banner Status Mode Live Chat Petugas */}
+      {isHumanMode && (
+        <div style={{
+          padding: '6px 14px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          backgroundColor: '#EFF6FF',
+          borderBottom: '1px solid #BFDBFE',
+          zIndex: 10,
+        }}>
+          <span style={{ fontSize: '11px', color: '#1E40AF', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10B981', display: 'inline-block' }}></span>
+            Antrean Petugas Aktif
+          </span>
+          <button
+            onClick={() => {
+              setIsHumanMode(false);
+              fetchOptions(null);
+              addBotMessage('Mode bantuan petugas diakhiri. Asisten AI KPP Pratama Rengat siap melayani pertanyaan Anda kembali.');
+            }}
+            style={{
+              padding: '3px 8px',
+              fontSize: '11px',
+              borderRadius: '12px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #93C5FD',
+              color: '#1D4ED8',
+              cursor: 'pointer',
+              fontWeight: '600',
+            }}
+          >
+            🤖 Kembali ke AI
+          </button>
+        </div>
+      )}
+
+      {/* Modal Popup Survei Kepuasan Layanan (IKM) */}
+      <SatisfactionSurveyModal
+        isOpen={showSurvey}
+        sessionId={sessionId}
+        onSubmit={handleSurveySubmit}
+        onClose={() => setShowSurvey(false)}
       />
 
       <ChatMessageList

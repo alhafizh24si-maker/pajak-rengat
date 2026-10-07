@@ -2,6 +2,10 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Daftar model teruji dengan prioritas tercepat & paling stabil
 const CANDIDATE_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-1.5-flash",
   "gemini-3.8-flash",
   "gemini-flash-latest",
   "gemini-flash-lite-latest",

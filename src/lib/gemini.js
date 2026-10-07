@@ -5,10 +5,14 @@ const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
 // Daftar model dengan urutan prioritas terbaik & kecepatan respons tertinggi
 const CANDIDATE_MODELS = [
-  "gemini-3.8-flash",      // Model utama tercepat & paling akurat
-  "gemini-flash-latest",   // Fallback alias super cepat
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-1.5-flash",
+  "gemini-3.8-flash",
+  "gemini-flash-latest",
   "gemini-flash-lite-latest",
-  "gemini-3.5-flash-lite", // Fallback lite
+  "gemini-3.5-flash-lite",
   "gemini-3.5-flash",
 ];
 

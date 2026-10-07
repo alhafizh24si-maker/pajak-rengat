@@ -1,8 +1,8 @@
 import React from 'react';
 
-const ChatHeader = ({ onMinimize, onClose, onClearChat }) => {
+const ChatHeader = ({ onMinimize, onClose, onClearChat, onOpenSurvey }) => {
   const handleClear = () => {
-    if (window.confirm('Yakin ingin menghapus riwayat chat?')) {
+    if (window.confirm('Yakin ingin menyelesaikan & mengakhiri sesi chat ini?')) {
       onClearChat();
     }
   };
@@ -35,10 +35,27 @@ const ChatHeader = ({ onMinimize, onClose, onClearChat }) => {
           <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>KPP Pratama Rengat</p>
         </div>
       </div>
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+        {onOpenSurvey && (
+          <button 
+            onClick={onOpenSurvey}
+            title="Beri Penilaian Layanan (IKM)"
+            style={{ 
+              background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,199,0,0.4)', 
+              color: '#FFC700', borderRadius: '8px',
+              cursor: 'pointer', fontSize: '13px', padding: '4px 8px',
+              display: 'flex', alignItems: 'center', gap: '4px',
+              fontWeight: '600', transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.22)'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.12)'}
+          >
+            ⭐ <span style={{ fontSize: '11px', color: '#FFF' }}>IKM</span>
+          </button>
+        )}
         <button 
           onClick={handleClear}
-          title="Hapus Percakapan"
+          title="Hapus / Akhiri Percakapan"
           style={{ 
             background: 'none', border: 'none', color: '#FFF', 
             cursor: 'pointer', fontSize: '16px', padding: '6px',

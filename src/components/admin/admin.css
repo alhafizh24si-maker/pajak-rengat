@@ -690,7 +690,7 @@ body,
 /* KPI Cards Grid */
 .ad-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
   margin-bottom: 24px;
 }
@@ -1049,6 +1049,353 @@ body,
   font-weight: 800;
 }
 
+
+/* ==========================================================================
+   PANEL INDEKS KEPUASAN MASYARAKAT (IKM / CSAT) — STANDAR DJP & KemenPAN-RB
+   ========================================================================== */
+.ad-ikm-panel {
+  background: var(--ad-bg-card);
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-xl);
+  padding: 26px 28px;
+  box-shadow: var(--ad-shadow-sm);
+  margin-top: 24px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.ad-ikm-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #F59E0B, #FFC700, #10B981);
+}
+
+.ad-ikm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--ad-border-subtle);
+  margin-bottom: 22px;
+}
+
+.ad-ikm-title-area {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ad-ikm-badge-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ad-ikm-emblem {
+  font-size: 22px;
+}
+
+.ad-ikm-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ad-navy-900);
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.ad-ikm-score-tag {
+  background: #FFFBEB;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ad-ikm-subtitle {
+  font-size: 12px;
+  color: var(--ad-text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.ad-ikm-header-metrics {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ad-ikm-metric-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.ad-ikm-metric-pill span {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ad-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ad-ikm-metric-pill strong {
+  font-size: 14.5px;
+  font-weight: 800;
+}
+
+.ad-ikm-metric-pill strong.mutu {
+  color: var(--ad-green);
+}
+
+.ad-ikm-metric-pill strong.persen {
+  color: var(--ad-blue-primary);
+}
+
+.ad-ikm-metric-divider {
+  width: 1px;
+  height: 28px;
+  background-color: var(--ad-border);
+}
+
+/* Grid Konten 3 Kolom */
+.ad-ikm-grid {
+  display: grid;
+  grid-template-columns: 240px 1.2fr 1.4fr;
+  gap: 22px;
+  align-items: stretch;
+}
+
+/* Kolom 1: Hero Score Card */
+.ad-ikm-hero-card {
+  background: linear-gradient(145deg, #FFFDF5 0%, #FFFBEB 100%);
+  border: 1px solid #FDE68A;
+  border-radius: var(--ad-radius-lg);
+  padding: 24px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.08);
+}
+
+.ad-ikm-big-number {
+  font-size: 54px;
+  font-weight: 900;
+  color: var(--ad-navy-900);
+  line-height: 1;
+  letter-spacing: -2px;
+  margin-bottom: 8px;
+}
+
+.ad-ikm-stars-row {
+  display: flex;
+  gap: 3px;
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.ad-ikm-stars-row span {
+  line-height: 1;
+  text-shadow: 0 1px 3px rgba(245, 158, 11, 0.3);
+}
+
+.ad-ikm-hero-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #92400E;
+  margin-bottom: 12px;
+}
+
+.ad-ikm-respondent-chip {
+  background: #FFFFFF;
+  border: 1px solid #FDE68A;
+  color: #B45309;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+/* Kolom 2: Distribution Bars */
+.ad-ikm-bars-card {
+  background: var(--ad-bg-canvas);
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-lg);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.ad-ikm-sub-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ad-navy-800);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ad-ikm-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.ad-ikm-bar-row:last-child {
+  margin-bottom: 0;
+}
+
+.ad-ikm-bar-label {
+  width: 44px;
+  font-weight: 700;
+  color: var(--ad-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11.5px;
+}
+
+.ad-ikm-bar-label span {
+  color: #F59E0B;
+}
+
+.ad-ikm-bar-track {
+  flex: 1;
+  height: 8px;
+  background: var(--ad-border);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.ad-ikm-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ad-ikm-bar-fill.star-5 { background: linear-gradient(90deg, #F59E0B, #FFC700); }
+.ad-ikm-bar-fill.star-4 { background: linear-gradient(90deg, #3B82F6, #60A5FA); }
+.ad-ikm-bar-fill.star-3 { background: linear-gradient(90deg, #10B981, #34D399); }
+.ad-ikm-bar-fill.star-2 { background: #FB923C; }
+.ad-ikm-bar-fill.star-1 { background: #EF4444; }
+
+.ad-ikm-bar-pct {
+  width: 38px;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ad-text-secondary);
+}
+
+.ad-ikm-bar-count {
+  width: 44px;
+  text-align: right;
+  font-size: 10.5px;
+  color: var(--ad-text-light);
+}
+
+/* Kolom 3: Live Feedback Feed */
+.ad-ikm-feed-card {
+  background: var(--ad-bg-canvas);
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-lg);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ad-ikm-feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.ad-ikm-feed-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ad-ikm-feed-list::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+.ad-ikm-feed-item {
+  background: #FFFFFF;
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-md);
+  padding: 10px 14px;
+  box-shadow: var(--ad-shadow-xs);
+  transition: all var(--ad-transition-fast);
+}
+
+.ad-ikm-feed-item:hover {
+  border-color: #BFDBFE;
+  box-shadow: var(--ad-shadow-sm);
+  transform: translateY(-1px);
+}
+
+.ad-ikm-feed-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.ad-ikm-feed-user {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ad-navy-800);
+}
+
+.ad-ikm-feed-stars {
+  color: #F59E0B;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.ad-ikm-feed-text {
+  font-size: 11.5px;
+  color: var(--ad-text-secondary);
+  line-height: 1.45;
+  margin: 0;
+  word-break: break-word;
+}
+
+.ad-ikm-feed-empty {
+  text-align: center;
+  padding: 24px 12px;
+  color: var(--ad-text-light);
+  font-size: 12px;
+}
+
+@media (max-width: 1024px) {
+  .ad-ikm-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
 /* ==========================================================================
    TAB 2: TEMPLATES COMPONENT STYLES
