@@ -117,6 +117,19 @@ CREATE POLICY "Allow all insert chat_messages"
 CREATE POLICY "Allow all update chat_messages"
     ON public.chat_messages FOR UPDATE TO anon, authenticated USING (true);
 
+-- FIX 5B: RLS policy untuk chat_sessions (Mencegah blokir CORS PATCH preflight)
+ALTER TABLE public.chat_sessions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all read chat_sessions" ON public.chat_sessions;
+DROP POLICY IF EXISTS "Allow all insert chat_sessions" ON public.chat_sessions;
+DROP POLICY IF EXISTS "Allow all update chat_sessions" ON public.chat_sessions;
+
+CREATE POLICY "Allow all read chat_sessions"
+    ON public.chat_sessions FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Allow all insert chat_sessions"
+    ON public.chat_sessions FOR INSERT TO anon, authenticated WITH CHECK (true);
+CREATE POLICY "Allow all update chat_sessions"
+    ON public.chat_sessions FOR UPDATE TO anon, authenticated USING (true);
+
 
 -- FIX 6: Perbaiki check constraint valid_message_status
 -- Error: "new row for relation chat_messages violates check constraint valid_message_status"

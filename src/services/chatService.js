@@ -98,19 +98,21 @@ export async function getChatSession(sessionId) {
 }
 
 export async function updateChatSession(sessionId, updateData = {}) {
-  if (!supabase) return unavailable();
+  if (!supabase || !sessionId) return unavailable();
   try {
+    // Gunakan upsert dengan onConflict: 'session_id' (menggunakan HTTP POST)
+    // untuk mencegah error CORS preflight "Method PATCH is not allowed"
     const { data, error } = await supabase
       .from('chat_sessions')
-      .update({
+      .upsert({
+        session_id: sessionId,
         ...updateData,
         updated_at: new Date().toISOString()
-      })
-      .eq('session_id', sessionId);
+      }, { onConflict: 'session_id' });
 
     return { data, error };
   } catch (err) {
-    console.error('[updateChatSession] Exception:', err);
+    console.warn('[updateChatSession] Handled:', err?.message || err);
     return { data: null, error: err };
   }
 }
@@ -127,8 +129,18 @@ export async function ensureChatSession(sessionId, channel = 'web') {
 }
 
 export async function endSession(sessionId, status = 'resolved') {
-  if (!supabase) return unavailable();
-  return supabase.from('chat_sessions').update({ status, ended_at: new Date().toISOString() }).eq('session_id', sessionId);
+  if (!supabase || !sessionId) return unavailable();
+  try {
+    return await supabase.from('chat_sessions').upsert({
+      session_id: sessionId,
+      status,
+      ended_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'session_id' });
+  } catch (err) {
+    console.warn('[endSession] Handled:', err?.message || err);
+    return { data: null, error: err };
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -357,16 +369,16 @@ export async function submitSatisfactionSurvey({ sessionId, rating, feedback = '
 
     const { data, error } = await supabase
       .from('chat_sessions')
-      .update({
+      .upsert({
+        session_id: sessionId,
         csat_rating: rating,
         feedback: combinedFeedback || null,
         rated_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      })
-      .eq('session_id', sessionId);
+      }, { onConflict: 'session_id' });
 
     if (error) {
-      console.error('[submitSatisfactionSurvey] Supabase update error:', error);
+      console.warn('[submitSatisfactionSurvey] Supabase upsert notice:', error?.message);
       return { data: null, error };
     }
 

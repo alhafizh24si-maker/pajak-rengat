@@ -45,5 +45,19 @@ FROM public.chat_sessions cs
 LEFT JOIN public.chat_messages cm ON cm.session_id = cs.session_id
 GROUP BY DATE(cs.started_at), COALESCE(cs.primary_category, 'Lainnya');
 
--- 5. Reload Schema PostgREST Supabase
+-- 5. Kebijakan Keamanan Row Level Security (RLS) untuk chat_sessions
+-- Menjamin izin SELECT, INSERT, dan UPDATE (PATCH / POST) bagi publik/anon bebas dari blokir CORS preflight
+ALTER TABLE public.chat_sessions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all read chat_sessions" ON public.chat_sessions;
+DROP POLICY IF EXISTS "Allow all insert chat_sessions" ON public.chat_sessions;
+DROP POLICY IF EXISTS "Allow all update chat_sessions" ON public.chat_sessions;
+
+CREATE POLICY "Allow all read chat_sessions"
+    ON public.chat_sessions FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Allow all insert chat_sessions"
+    ON public.chat_sessions FOR INSERT TO anon, authenticated WITH CHECK (true);
+CREATE POLICY "Allow all update chat_sessions"
+    ON public.chat_sessions FOR UPDATE TO anon, authenticated USING (true);
+
+-- 6. Reload Schema PostgREST Supabase
 NOTIFY pgrst, 'reload schema';

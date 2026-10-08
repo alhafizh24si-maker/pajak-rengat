@@ -223,6 +223,35 @@ Petugas kami akan melakukan pengecekan pada database sistem.`,
     topic: 'NITKU',
     category: 'Layanan',
     priority: 'P3',
+  },
+  {
+    id: 'kb-pengertian-pajak',
+    keywords: [
+      'pajak itu apa ya',
+      'pajak itu apa',
+      'apa itu pajak',
+      'pengertian pajak',
+      'definisi pajak',
+      'kenapa harus bayar pajak',
+      'mengapa bayar pajak',
+      'fungsi pajak'
+    ],
+    answer: `📌 Pengertian Pajak (Berdasarkan UU KUP)
+
+Pajak adalah kontribusi wajib kepada negara yang terutang oleh orang pribadi atau badan yang bersifat memaksa berdasarkan Undang-Undang, dengan tidak mendapatkan imbalan secara langsung dan digunakan untuk keperluan negara bagi sebesar-besarnya kemakmuran rakyat.
+
+4 Fungsi Utama Pajak bagi Warga Negara:
+1. Fungsi Anggaran (Budgetair): Membiayai pembangunan fasilitas umum, jembatan, jalan raya, pendidikan, dan kesehatan.
+2. Fungsi Mengatur (Regulerend): Mendorong kemajuan ekonomi (seperti tarif PPh Final UMKM yang sangat ringan 0,5%).
+3. Fungsi Stabilitas: Menjaga stabilitas moneter dan menahan laju inflasi.
+4. Fungsi Redistribusi: Menyalurkan subsidi sosial dan jaminan kesehatan bagi masyarakat membutuhkan.
+
+🏛️ Seluruh layanan perpajakan di KPP Pratama Rengat bebas biaya (GRATIS / Rp 0).
+
+Silakan pilih menu bantuan 1 s.d. 6 di bawah atau ketik pertanyaan spesifik Anda.`,
+    topic: 'PENGERTIAN_PAJAK',
+    category: 'Konsultasi',
+    priority: 'P4',
   }
 ];
 
