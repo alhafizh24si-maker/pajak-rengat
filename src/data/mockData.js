@@ -1,9 +1,10 @@
   export const marqueeItems = [
-    "⚡ Batas SPT Tahunan OP: 31 Maret 2025",
-    "📋 Layanan chatbot tersedia 24 jam non-stop",
-    "🚫 Seluruh layanan DJP GRATIS — Waspadai pungli!",
-    "📞 Butuh bantuan? Hubungi (0769) 321234",
-    "💻 Gunakan e-Filing untuk kemudahan laporan pajak dari rumah",
+    "⚡ Batas Pelaporan SPT Tahunan: 31 Maret (Orang Pribadi) & 30 April (Badan)",
+    "🧮 Tersedia Kalkulator Pajak Terpadu: Hitung PPh 21 TER, UMKM 0,5% & PHTB Tanah",
+    "📋 Layanan chatbot virtual cerdas aktif 24 jam non-stop",
+    "🚫 Seluruh layanan DJP GRATIS — Bebas biaya dan gratifikasi!",
+    "📞 Helpdesk Resmi KPP Pratama Rengat: 0812-5000-213 / (0769) 321234",
+    "💻 Gunakan portal Coretax DJP Online untuk kemudahan pelaporan dan administrasi mandiri",
   ];
 
   export const services = [

@@ -4,6 +4,8 @@ import logoDjp from "../assets/img/logo-djp-nonfix.jpeg";
 import kppRengatImg from "../assets/img/KPP Pratama Rengat.jpg";
 import ChatWidget from "../components/chatbot/ChatWidget";
 import FloatingWhatsApp from "../components/ui/FloatingWhatsApp";
+import TaxCalculator from "../components/ui/TaxCalculator";
+import DownloadCenter from "../components/ui/DownloadCenter";
 import { marqueeItems, services, faqs, announcements, newsItems, flowSteps, quickLinks, emergencyContacts, slaMetrics, verifiedChannels } from "../data/mockData";
 
 function TaxPortal() {
@@ -112,6 +114,8 @@ function TaxPortal() {
           <div className="topbar-right">
             <nav className="topbar-nav">
               <a href="#layanan" className="topbar-link">Layanan</a>
+              <a href="#kalkulator" className="topbar-link">Kalkulator</a>
+              <a href="#unduh-formulir" className="topbar-link">Formulir</a>
               <a href="#informasi" className="topbar-link">Informasi</a>
               <a href="#faq" className="topbar-link">FAQ</a>
               <a href="#kontak" className="topbar-link">Kontak</a>
@@ -303,6 +307,7 @@ function TaxPortal() {
             <div className="welcome-actions">
               <button className="btn-primary-hero" onClick={() => document.getElementById('layanan')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>Jelajahi Layanan</button>
               <button className="btn-outline-hero" onClick={() => document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>Lihat FAQ</button>
+              <button className="btn-outline-hero" onClick={() => document.getElementById('kalkulator')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>🧮 Hitung Pajak</button>
               <span className="action-hint"><span className="pulse-arrow">↗</span> Chatbot di pojok kanan bawah</span>
             </div>
           </div>
@@ -437,6 +442,8 @@ function TaxPortal() {
             )}
           </div>
         </section>
+        <TaxCalculator />
+        <DownloadCenter />
 
         <section className="news-section" id="informasi">
           <h2 className="section-title-center">Informasi & Pengumuman</h2>

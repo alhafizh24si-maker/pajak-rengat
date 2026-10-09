@@ -43,7 +43,7 @@ Silakan ketik **angka menu** atau **pilih tombol** di bawah ini:
 };
 
 const CONTEXT_TIMEOUT_MS = 5 * 60 * 1000;
-const WA_ADMIN_NUMBER = '628123456789'; // 💬 Ganti dengan nomor WhatsApp Helpdesk/Admin kamu
+const WA_ADMIN_NUMBER = '628125000213'; // 💬 Nomor resmi WhatsApp Helpdesk KPP Pratama Rengat
 
 const formatTime = (date) =>
   (date instanceof Date ? date : new Date(date)).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });

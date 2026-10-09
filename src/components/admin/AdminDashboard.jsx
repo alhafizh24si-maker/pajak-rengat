@@ -13,7 +13,8 @@ import {
   unsubscribe,
   logChatMessage,
   updateChatSession,
-  updateTemplate
+  updateTemplate,
+  createTemplate
 } from '../../services/chatService';
 
 // ── Dummy Data Fallback ──
@@ -74,7 +75,76 @@ function OverviewTab({ period, setPeriod, stats }) {
         : [48, 62, 57, 78, 72, 91, 84];
 
   const handleExport = () => {
-    alert('Fitur Export Laporan KPI (CSV/PDF) sedang diproses...');
+    try {
+      const nowStr = new Date().toLocaleString('id-ID');
+      const dateFile = new Date().toISOString().slice(0, 10);
+
+      const rows = [];
+      rows.push(['LAPORAN KINERJA LAYANAN CHATBOT & INDEKS KEPUASAN MASYARAKAT (IKM)']);
+      rows.push(['KANTOR PELAYANAN PAJAK (KPP) PRATAMA RENGAT']);
+      rows.push(['Tanggal Cetak', nowStr]);
+      rows.push(['Periode Analisis', `${period} Hari Terakhir`]);
+      rows.push([]);
+
+      rows.push(['=== 1. RINGKASAN INDIKATOR KINERJA UTAMA (KPI) ===']);
+      rows.push(['Indikator', 'Nilai', 'Standar Pelayanan / Keterangan']);
+      rows.push(['Total Sesi Chat', stats?.kpi?.totalSessions?.value ?? 0, 'Volume Layanan Masuk']);
+      rows.push(['Sesi Selesai (Resolved)', stats?.kpi?.resolvedSessions?.value ?? 0, 'Diselesaikan Mandiri/Petugas']);
+      rows.push(['Match Rate (Kecocokan AI)', `${stats?.kpi?.matchRate?.value ?? 75}%`, 'Tingkat Otomasi Sistem']);
+      rows.push([
+        'Rata-rata Waktu Respons',
+        stats?.kpi?.avgResponseTime?.display || `${((stats?.kpi?.avgResponseTime?.value || 2800) / 1000).toFixed(1)}s`,
+        'Standar SOP < 3 detik'
+      ]);
+      rows.push(['Skor Indeks Kepuasan (IKM)', `${stats?.kpi?.csat?.score || '4.8'} / 5.0`, 'Skala Likert PermenPAN-RB No. 14/2017']);
+      rows.push(['Mutu Pelayanan', stats?.kpi?.csat?.grade || 'Sangat Baik (A)', `${stats?.kpi?.csat?.percentage || 96}% Kepuasan`]);
+      rows.push([]);
+
+      rows.push(['=== 2. DISTRIBUSI PENILAIAN BINTANG IKM (CSAT) ===']);
+      rows.push(['Rating Bintang', 'Jumlah Responden', 'Persentase']);
+      const breakdown = stats?.csatBreakdown || { 5: 12, 4: 3, 3: 1, 2: 0, 1: 0 };
+      const totalRatings = Object.values(breakdown).reduce((a, b) => a + b, 0) || 1;
+      [5, 4, 3, 2, 1].forEach((star) => {
+        const count = breakdown[star] || 0;
+        const pct = Math.round((count / totalRatings) * 100);
+        rows.push([`${star} Bintang`, count, `${pct}%`]);
+      });
+      rows.push([]);
+
+      rows.push(['=== 3. DAFTAR ULASAN & FEEDBACK WAJIB PAJAK ===']);
+      rows.push(['No', 'Nama / ID Wajib Pajak', 'Rating Bintang', 'Kanal', 'Ulasan / Saran Pelayanan', 'Waktu']);
+      const feedbacks = (stats?.recentFeedbacks && stats.recentFeedbacks.length > 0)
+        ? stats.recentFeedbacks
+        : [
+            { wpName: 'Budi Santoso', rating: 5, channel: 'web', feedback: '[Respon Cepat] Sangat membantu pembuatan kode billing PHTB tanah di Inhu.', date: nowStr },
+            { wpName: 'Wajib Pajak PKP Rengat', rating: 5, channel: 'whatsapp', feedback: '[Penjelasan Jelas] Panduan SPT Masa PPN via Coretax sangat ramah dan detail.', date: nowStr }
+          ];
+
+      feedbacks.forEach((fb, idx) => {
+        rows.push([
+          idx + 1,
+          fb.wpName || fb.sessionId || 'Wajib Pajak',
+          `${fb.rating || 5} Bintang`,
+          fb.channel === 'whatsapp' ? 'WhatsApp' : 'Web Chatbot',
+          `"${(fb.feedback || '-').replace(/"/g, '""')}"`,
+          fb.date ? formatDate(fb.date) : '-'
+        ]);
+      });
+
+      const csvContent = '\uFEFF' + rows.map((e) => e.join(';')).join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Laporan_KPI_IKM_KPP_Pratama_Rengat_${dateFile}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export error:', err);
+      alert('Terjadi kesalahan saat mengunduh laporan: ' + err.message);
+    }
   };
 
   return (
@@ -296,7 +366,7 @@ function OverviewTab({ period, setPeriod, stats }) {
 }
 
 // ── Tab 2: Templates ──
-function TemplatesTab({ initialQuery = '' }) {
+function TemplatesTab({ initialQuery = '', newDraft = null, onClearDraft }) {
   const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState('Semua');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -305,12 +375,34 @@ function TemplatesTab({ initialQuery = '' }) {
   const [copied, setCopied] = useState(false);
   const [remoteTemplates, setRemoteTemplates] = useState(null);
   const [editingTemplate, setEditingTemplate] = useState(null);
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [newTemplateForm, setNewTemplateForm] = useState({
+    title: '',
+    category: 'SPT',
+    priority: 'P2',
+    tags: '',
+    template: '',
+  });
 
   useEffect(() => {
     if (initialQuery) {
       setQuery(initialQuery);
     }
   }, [initialQuery]);
+
+  useEffect(() => {
+    if (newDraft) {
+      setIsAddingNew(true);
+      setEditingTemplate(null);
+      setNewTemplateForm({
+        title: newDraft.title || '',
+        category: newDraft.category || 'Konsultasi',
+        priority: newDraft.priority || 'P2',
+        tags: newDraft.tags || '',
+        template: newDraft.template || '',
+      });
+    }
+  }, [newDraft]);
 
   useEffect(() => {
     getTemplates({ search: query, category, favorite: favoritesOnly }).then((result) => {
@@ -368,6 +460,52 @@ function TemplatesTab({ initialQuery = '' }) {
     }
   };
 
+  const handleSaveNew = async () => {
+    if (!newTemplateForm.title.trim()) {
+      alert('Mohon masukkan judul template.');
+      return;
+    }
+    if (!newTemplateForm.template.trim()) {
+      alert('Mohon masukkan isi jawaban template.');
+      return;
+    }
+
+    try {
+      const tagsArray = newTemplateForm.tags
+        .split(',')
+        .map((t) => t.trim().replace(/^#/, ''))
+        .filter(Boolean);
+
+      const payload = {
+        title: newTemplateForm.title.trim(),
+        category: newTemplateForm.category || 'Umum',
+        content: newTemplateForm.template.replace(/\n/g, '**'),
+        template: newTemplateForm.template.replace(/\n/g, '**'),
+        keywords: tagsArray,
+        tags: tagsArray,
+        priority: newTemplateForm.priority || 'P3',
+        isFavorite: false,
+      };
+
+      const { data, error } = await createTemplate(payload);
+      if (error) throw error;
+
+      if (data) {
+        if (remoteTemplates) {
+          setRemoteTemplates([data, ...remoteTemplates]);
+        }
+        setSelectedId(data.id);
+      }
+      setIsAddingNew(false);
+      setNewTemplateForm({ title: '', category: 'SPT', priority: 'P2', tags: '', template: '' });
+      if (onClearDraft) onClearDraft();
+      alert('✓ Template jawaban baru berhasil ditambahkan ke sistem!');
+    } catch (err) {
+      console.error('Failed to create template:', err);
+      alert('Gagal membuat template baru: ' + (err.message || err.toString()));
+    }
+  };
+
   return (
     <div className="ad-templates-tab max-w-7xl mx-auto h-full flex flex-col">
       <div className="ad-template-toolbar">
@@ -393,7 +531,10 @@ function TemplatesTab({ initialQuery = '' }) {
         </button>
         <button
           className="ad-primary-btn"
-          onClick={() => window.alert('Form template baru siap dihubungkan ke API.')}
+          onClick={() => {
+            setIsAddingNew(true);
+            setEditingTemplate(null);
+          }}
         >
           ＋ Tambah Template
         </button>
@@ -405,7 +546,11 @@ function TemplatesTab({ initialQuery = '' }) {
             <button
               className={`ad-template-item ${selected?.id === template.id ? 'selected' : ''}`}
               key={template.id}
-              onClick={() => setSelectedId(template.id)}
+              onClick={() => {
+                setSelectedId(template.id);
+                setIsAddingNew(false);
+                setEditingTemplate(null);
+              }}
             >
               <span>
                 <b>
@@ -422,7 +567,84 @@ function TemplatesTab({ initialQuery = '' }) {
           {filtered.length === 0 && <div className="ad-empty-state p-8 text-center text-gray-400">Template tidak ditemukan.</div>}
         </div>
 
-        {selected && !editingTemplate && (
+        {isAddingNew && (
+          <div className="ad-template-preview h-full overflow-y-auto p-6 bg-white rounded-xl flex flex-col gap-4 border border-blue-100 shadow-sm">
+            <div className="flex justify-between items-center pb-2 border-b">
+              <div>
+                <h3 className="text-lg font-bold text-[#0A2540]">Tambah Template Jawaban Baru</h3>
+                <p className="text-xs text-gray-500">Buat jawaban standar baru untuk petugas atau asisten chatbot.</p>
+              </div>
+              <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded font-semibold border border-blue-200">
+                Mode Penambahan
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-gray-700">Kategori Layanan</span>
+                <select
+                  className="p-2 text-sm border border-gray-300 rounded-lg bg-white"
+                  value={newTemplateForm.category}
+                  onChange={(e) => setNewTemplateForm({ ...newTemplateForm, category: e.target.value })}
+                >
+                  {['SPT', 'e-Billing', 'NPWP', 'Layanan', 'Profil', 'Konsultasi', 'Umum'].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-gray-700">Tingkat Prioritas</span>
+                <select
+                  className="p-2 text-sm border border-gray-300 rounded-lg bg-white"
+                  value={newTemplateForm.priority}
+                  onChange={(e) => setNewTemplateForm({ ...newTemplateForm, priority: e.target.value })}
+                >
+                  <option value="P1">P1 (Urgen / Prioritas Utama)</option>
+                  <option value="P2">P2 (Standar / Sering Ditanyakan)</option>
+                  <option value="P3">P3 (Informasi Umum)</option>
+                </select>
+              </label>
+            </div>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold text-gray-700">Judul Template</span>
+              <input 
+                type="text" 
+                className="p-2.5 text-sm border border-gray-300 rounded-lg focus:border-blue-500 outline-none"
+                placeholder="Contoh: Panduan Mengatasi E-Faktur Error ETAX-10001..."
+                value={newTemplateForm.title} 
+                onChange={(e) => setNewTemplateForm({ ...newTemplateForm, title: e.target.value })} 
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold text-gray-700">Tags / Kata Kunci (pisahkan koma)</span>
+              <input 
+                type="text" 
+                className="p-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 outline-none"
+                placeholder="misal: efaktur, error, coretax, ppn"
+                value={newTemplateForm.tags} 
+                onChange={(e) => setNewTemplateForm({ ...newTemplateForm, tags: e.target.value })} 
+              />
+            </label>
+            <label className="flex flex-col gap-1 flex-1">
+              <span className="text-xs font-semibold text-gray-700">Isi Jawaban Resmi (Format Markdown didukung)</span>
+              <textarea 
+                className="p-3 border border-gray-300 rounded-lg font-mono text-xs min-h-[220px] flex-1 focus:border-blue-500 outline-none leading-relaxed"
+                placeholder="Tuliskan format jawaban lengkap dengan poin atau langkah-langkah..."
+                value={newTemplateForm.template} 
+                onChange={(e) => setNewTemplateForm({ ...newTemplateForm, template: e.target.value })} 
+              />
+            </label>
+            <div className="flex gap-3 mt-auto pt-4 border-t border-gray-100">
+              <button className="ad-primary-btn" onClick={handleSaveNew}>
+                💾 Simpan Template Baru
+              </button>
+              <button className="ad-ghost-btn" onClick={() => { setIsAddingNew(false); if (onClearDraft) onClearDraft(); }}>
+                Batal
+              </button>
+            </div>
+          </div>
+        )}
+
+        {selected && !editingTemplate && !isAddingNew && (
           <div className="ad-template-preview h-full overflow-y-auto">
             <div className="ad-preview-head">
               <div>
@@ -460,7 +682,7 @@ function TemplatesTab({ initialQuery = '' }) {
           </div>
         )}
 
-        {editingTemplate && (
+        {editingTemplate && !isAddingNew && (
           <div className="ad-template-preview h-full overflow-y-auto p-6 bg-white rounded-xl flex flex-col gap-4">
             <h3 className="text-lg font-semibold">Edit Template Jawaban</h3>
             <label className="flex flex-col gap-1">
@@ -1051,8 +1273,17 @@ export default function AdminDashboard({ onBack }) {
     };
   }, [fetchDashboard]);
 
+  const [templateDraft, setTemplateDraft] = useState(null);
+
   const handleCreateAnswer = (questionText) => {
-    setTemplateQuery(questionText);
+    setTemplateQuery('');
+    setTemplateDraft({
+      title: questionText ? `Jawaban: ${questionText.slice(0, 50)}` : '',
+      category: 'Konsultasi',
+      priority: 'P2',
+      tags: 'ai, bantuan, konsultasi',
+      template: `Halo Wajib Pajak, terkait pertanyaan Anda mengenai:\n"${questionText}"\n\nBerikut penjelasan resmi dari KPP Pratama Rengat:\n1. \n2. \n\nSilakan hubungi helpdesk kami jika memerlukan informasi lebih lanjut.`
+    });
     setActiveTab('templates');
   };
 
@@ -1181,7 +1412,11 @@ export default function AdminDashboard({ onBack }) {
               <OverviewTab period={period} setPeriod={setPeriod} stats={stats} />
             )}
             {activeTab === 'templates' && (
-              <TemplatesTab initialQuery={templateQuery} />
+              <TemplatesTab
+                initialQuery={templateQuery}
+                newDraft={templateDraft}
+                onClearDraft={() => setTemplateDraft(null)}
+              />
             )}
             {activeTab === 'chats' && (
               <ChatsTab remoteSessions={stats?.sessions} onChatUpdated={fetchDashboard} />

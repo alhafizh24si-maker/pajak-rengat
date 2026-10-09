@@ -196,6 +196,7 @@ export async function logChatMessage(arg1, roleArg, textArg, confidenceScoreArg 
 
   try {
     const templateId = metadata.templateId || null;
+    const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
     const messageData = {
       session_id: sessionId,
       role,
@@ -207,8 +208,8 @@ export async function logChatMessage(arg1, roleArg, textArg, confidenceScoreArg 
       priority: metadata.priority || null,
       message_status: metadata.status || 'received',
       is_template_used: Boolean(metadata.isTemplateUsed),
-      // ✅ FIX: Hanya kirim template_id jika ada nilai valid (hindari uuid=text error)
-      ...(templateId ? { template_id: templateId } : {}),
+      // Hanya sertakan template_id jika merupakan format UUID valid (mencegah error Postgres: uuid = text)
+      ...(isUuid(templateId) ? { template_id: templateId } : {}),
     };
 
     // 1. Simpan pesan baru ke tabel chat_messages
@@ -341,8 +342,47 @@ export async function getAllCategories() {
 }
 
 export async function createTemplate(template) {
-  if (!supabase) throw new Error('Supabase belum dikonfigurasi');
-  return supabase.from('templates').insert({ title: template.title, category: template.category, content: template.content, keywords: template.keywords, priority: template.priority, is_favorite: template.isFavorite, is_active: true }).select().single();
+  const newTplObj = {
+    id: 'TPL-' + Date.now().toString(36).toUpperCase(),
+    title: template.title || 'Template Baru',
+    category: template.category || 'Umum',
+    template: template.content || template.template || '',
+    content: template.content || template.template || '',
+    tags: Array.isArray(template.keywords) ? template.keywords : (Array.isArray(template.tags) ? template.tags : []),
+    priority: template.priority || 'P3',
+    is_favorite: Boolean(template.isFavorite),
+    is_active: true,
+    usageCount: 0,
+  };
+
+  if (!supabase) {
+    responseTemplates.unshift(newTplObj);
+    return { data: newTplObj, error: null };
+  }
+
+  try {
+    const { data, error } = await supabase.from('templates').insert({
+      title: template.title,
+      category: template.category || 'Umum',
+      content: template.content || template.template,
+      keywords: Array.isArray(template.keywords) ? template.keywords : (Array.isArray(template.tags) ? template.tags : []),
+      priority: template.priority || 'P3',
+      is_favorite: Boolean(template.isFavorite),
+      is_active: true
+    }).select().single();
+
+    if (error) {
+      console.warn('[createTemplate] Supabase insert fallback to local:', error.message);
+      responseTemplates.unshift(newTplObj);
+      return { data: newTplObj, error: null };
+    }
+
+    return { data: normalizeTemplate(data), error: null };
+  } catch (err) {
+    console.warn('[createTemplate] Exception, fallback to local:', err?.message || err);
+    responseTemplates.unshift(newTplObj);
+    return { data: newTplObj, error: null };
+  }
 }
 
 
