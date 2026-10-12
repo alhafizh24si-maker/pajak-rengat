@@ -5,7 +5,8 @@ import kppRengatImg from "../assets/img/KPP Pratama Rengat.jpg";
 import ChatWidget from "../components/chatbot/ChatWidget";
 import FloatingWhatsApp from "../components/ui/FloatingWhatsApp";
 import TaxCalculator from "../components/ui/TaxCalculator";
-import DownloadCenter from "../components/ui/DownloadCenter";
+import ServiceTrackerModal from "../components/ui/ServiceTrackerModal";
+import ServiceDetailModal from "../components/ui/ServiceDetailModal";
 import { marqueeItems, services, faqs, announcements, newsItems, flowSteps, quickLinks, emergencyContacts, slaMetrics, verifiedChannels } from "../data/mockData";
 
 function TaxPortal() {
@@ -19,6 +20,8 @@ function TaxPortal() {
   const [showScamModal, setShowScamModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showTrackerModal, setShowTrackerModal] = useState(false);
+  const [selectedDetailService, setSelectedDetailService] = useState(null);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -115,7 +118,6 @@ function TaxPortal() {
             <nav className="topbar-nav">
               <a href="#layanan" className="topbar-link">Layanan</a>
               <a href="#kalkulator" className="topbar-link">Kalkulator</a>
-              <a href="#unduh-formulir" className="topbar-link">Formulir</a>
               <a href="#informasi" className="topbar-link">Informasi</a>
               <a href="#faq" className="topbar-link">FAQ</a>
               <a href="#kontak" className="topbar-link">Kontak</a>
@@ -128,6 +130,26 @@ function TaxPortal() {
                 aria-label="Toggle Dark Mode"
               >
                 {isDarkMode ? '☀️' : '🌙'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowTrackerModal(true)}
+                className="topbar-link"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.12)',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  color: '#FFFFFF',
+                  padding: '6px 11px',
+                  borderRadius: '6px',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <span>🔍</span> Lacak Berkas
               </button>
               <Link to="/login" className="topbar-link topbar-admin-btn" style={{ textDecoration: 'none' }}>
                 ⚙️ Panel Petugas
@@ -306,6 +328,7 @@ function TaxPortal() {
             </form>
             <div className="welcome-actions">
               <button className="btn-primary-hero" onClick={() => document.getElementById('layanan')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>Jelajahi Layanan</button>
+              <button className="btn-outline-hero" onClick={() => setShowTrackerModal(true)}>🔍 Lacak Berkas</button>
               <button className="btn-outline-hero" onClick={() => document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>Lihat FAQ</button>
               <button className="btn-outline-hero" onClick={() => document.getElementById('kalkulator')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>🧮 Hitung Pajak</button>
               <span className="action-hint"><span className="pulse-arrow">↗</span> Chatbot di pojok kanan bawah</span>
@@ -434,7 +457,35 @@ function TaxPortal() {
                 <div className="service-card-body">
                   <div className="service-header"><span className="service-badge-tag">{item.category}</span></div>
                   <h3>{item.title}</h3><p>{item.desc}</p>
-                  <a href={item.link} target="_blank" rel="noopener noreferrer" className="service-cta-btn">Pelajari Lebih Lanjut →</a>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDetailService(item)}
+                      style={{
+                        flex: 1,
+                        backgroundColor: '#EFF6FF',
+                        color: '#1D4ED8',
+                        border: '1px solid #BFDBFE',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        textAlign: 'center'
+                      }}
+                    >
+                      📋 Syarat &amp; Format WA
+                    </button>
+                    <a
+                      href={item.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="service-cta-btn"
+                      style={{ margin: 0, flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      Portal DJP →
+                    </a>
+                  </div>
                 </div>
               </article>
             )) : (
@@ -443,7 +494,6 @@ function TaxPortal() {
           </div>
         </section>
         <TaxCalculator />
-        <DownloadCenter />
 
         <section className="news-section" id="informasi">
           <h2 className="section-title-center">Informasi & Pengumuman</h2>
@@ -638,6 +688,15 @@ function TaxPortal() {
         <div className="footer-bottom"><div className="footer-bottom-inner"><div className="footer-bottom-left"><p>© {new Date().getFullYear()} KPP Pratama Rengat — Direktorat Jenderal Pajak, Kementerian Keuangan RI</p></div></div></div>
       </footer>
 
+      <ServiceTrackerModal
+        isOpen={showTrackerModal}
+        onClose={() => setShowTrackerModal(false)}
+      />
+      <ServiceDetailModal
+        service={selectedDetailService}
+        isOpen={Boolean(selectedDetailService)}
+        onClose={() => setSelectedDetailService(null)}
+      />
       <ChatWidget />
       <FloatingWhatsApp />
     </div>

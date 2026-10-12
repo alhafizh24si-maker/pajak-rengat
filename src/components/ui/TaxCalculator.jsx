@@ -9,6 +9,106 @@ function formatIDR(number) {
   }).format(number || 0);
 }
 
+// ── Komponen Aksi Berbagi, Salin & Kirim ke WhatsApp Billing ──
+function CalculationShareBar({ title, details, taxAmount, note }) {
+  const [copied, setCopied] = useState(false);
+
+  const formatText = () => {
+    let text = `📄 *SIMULASI PERHITUNGAN PAJAK (KPP PRATAMA RENGAT)*\n`;
+    text += `*Jenis Pajak:* ${title}\n`;
+    text += `*Tanggal:* ${new Date().toLocaleDateString('id-ID')}\n\n`;
+    text += `*Rincian Perhitungan:*\n`;
+    details.forEach((d) => {
+      text += `• ${d.label}: ${d.value}\n`;
+    });
+    text += `\n*Estimasi Pajak Terutang:* ${taxAmount}\n`;
+    if (note) text += `*Catatan Regulasi:* ${note}\n`;
+    text += `\nMohon bantuan petugas Helpdesk KPP Pratama Rengat untuk pembuatan Kode Billing resmi. Terima kasih.`;
+    return text;
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(formatText());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const waUrl = `https://wa.me/628125000213?text=${encodeURIComponent(formatText())}`;
+
+  return (
+    <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <a
+          href={waUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            flex: 1,
+            backgroundColor: '#25D366',
+            color: '#FFFFFF',
+            fontWeight: 700,
+            fontSize: '12px',
+            padding: '10px 12px',
+            borderRadius: '8px',
+            textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px'
+          }}
+        >
+          <span>💬</span> Kirim ke WA Petugas Billing
+        </a>
+
+        <button
+          type="button"
+          onClick={handlePrint}
+          style={{
+            backgroundColor: '#F1F5F9',
+            border: '1px solid #CBD5E1',
+            color: '#334155',
+            fontWeight: 700,
+            fontSize: '12px',
+            padding: '10px 14px',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+          title="Cetak atau Simpan PDF"
+        >
+          <span>🖨️</span> Cetak
+        </button>
+      </div>
+
+      <button
+        type="button"
+        onClick={handleCopy}
+        style={{
+          width: '100%',
+          backgroundColor: copied ? '#ECFDF5' : '#F8FAFC',
+          color: copied ? '#059669' : '#64748B',
+          border: copied ? '1px solid #A7F3D0' : '1px solid #E2E8F0',
+          fontSize: '11.5px',
+          fontWeight: 600,
+          cursor: 'pointer',
+          padding: '6px 10px',
+          borderRadius: '6px',
+          textAlign: 'center'
+        }}
+      >
+        {copied ? '✅ Ringkasan Perhitungan Tersalin!' : '📋 Salin Rincian Perhitungan Pajak'}
+      </button>
+    </div>
+  );
+}
+
+
 // ── Kalkulasi PPh 21 TER (PP 58/2023 & PMK 168/2023) ──
 function calculateTER(bruto, category) {
   const b = Number(bruto) || 0;
@@ -429,7 +529,19 @@ export default function TaxCalculator() {
                   </p>
                 </div>
 
-                <div style={{ marginTop: '20px' }}>
+                <CalculationShareBar
+                  title="PPh 21 Pegawai / Karyawan (TER)"
+                  details={[
+                    { label: 'Gaji Bruto Bulanan', value: formatIDR(bruto) },
+                    { label: 'Status PTKP', value: `${ptkpDetail} (Kategori TER ${ptkpCategory})` },
+                    { label: 'Tarif Efektif Rata-Rata', value: `${terResult.rate}%` },
+                    { label: 'Gaji Bersih Diterima', value: formatIDR(terResult.takeHome) }
+                  ]}
+                  taxAmount={formatIDR(terResult.tax)}
+                  note="Dihitung berdasarkan PP 58/2023 & PMK 168/2023"
+                />
+
+                <div style={{ marginTop: '12px' }}>
                   <a
                     href="https://djponline.pajak.go.id"
                     target="_blank"
@@ -441,7 +553,7 @@ export default function TaxCalculator() {
                       color: '#FFFFFF',
                       fontWeight: 700,
                       fontSize: '13px',
-                      padding: '12px',
+                      padding: '11px',
                       borderRadius: '8px',
                       textDecoration: 'none'
                     }}
@@ -602,7 +714,19 @@ export default function TaxCalculator() {
                   </div>
                 </div>
 
-                <div style={{ marginTop: '20px' }}>
+                <CalculationShareBar
+                  title="PPh Final UMKM 0,5% (PP 55/2022)"
+                  details={[
+                    { label: 'Bentuk Wajib Pajak', value: jenisWpUmkm === 'op' ? 'Orang Pribadi (Fasilitas Bebas Rp 500 Jt)' : 'Badan Usaha (CV/PT)' },
+                    { label: 'Omzet Bruto Bulan Ini', value: formatIDR(omzetBulanan) },
+                    { label: 'Omzet Kumulatif Lalu', value: formatIDR(omzetKumulatif) },
+                    { label: 'Total Omzet Berjalan', value: formatIDR(Number(omzetBulanan) + Number(omzetKumulatif)) }
+                  ]}
+                  taxAmount={formatIDR(umkmResult.tax)}
+                  note={umkmResult.message}
+                />
+
+                <div style={{ marginTop: '12px' }}>
                   <a
                     href="https://billing.pajak.go.id"
                     target="_blank"
@@ -614,7 +738,7 @@ export default function TaxCalculator() {
                       color: '#0A2540',
                       fontWeight: 800,
                       fontSize: '13px',
-                      padding: '12px',
+                      padding: '11px',
                       borderRadius: '8px',
                       textDecoration: 'none'
                     }}
@@ -751,7 +875,18 @@ export default function TaxCalculator() {
                   </div>
                 </div>
 
-                <div style={{ marginTop: '20px' }}>
+                <CalculationShareBar
+                  title="PPh Pengalihan Hak atas Tanah & Bangunan (PHTB)"
+                  details={[
+                    { label: 'Nilai Transaksi Pengalihan', value: formatIDR(nilaiTransaksi) },
+                    { label: 'Kategori Objek', value: jenisPhtb === 'sederhana' ? 'Rumah Sederhana / Subsidi (1%)' : 'Tanah / Properti Umum (2,5%)' },
+                    { label: 'Tarif PPh Terutang', value: phtbResult.rate }
+                  ]}
+                  taxAmount={formatIDR(phtbResult.tax)}
+                  note="KAP 411128 KJS 402 - Validasi Surat Setoran Pajak (SSP) di loket TPT KPP Rengat"
+                />
+
+                <div style={{ marginTop: '12px' }}>
                   <button
                     type="button"
                     onClick={() => {
@@ -765,7 +900,7 @@ export default function TaxCalculator() {
                       color: '#FFFFFF',
                       fontWeight: 700,
                       fontSize: '13px',
-                      padding: '12px',
+                      padding: '11px',
                       borderRadius: '8px',
                       border: 'none',
                       cursor: 'pointer'
