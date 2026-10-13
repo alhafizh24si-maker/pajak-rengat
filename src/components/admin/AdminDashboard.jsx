@@ -759,7 +759,18 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
       matchStatus = session.status === status;
     }
     const matchChannel = channelFilter === 'all' || session.channel === channelFilter;
-    return matchStatus && matchChannel;
+
+    let matchSearch = true;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const wp = String(session.wpName || '').toLowerCase();
+      const sid = String(session.sessionId || '').toLowerCase();
+      const cat = String(session.primary_category || '').toLowerCase();
+      const st = String(session.status || '').toLowerCase();
+      matchSearch = wp.includes(q) || sid.includes(q) || cat.includes(q) || st.includes(q);
+    }
+
+    return matchStatus && matchChannel && matchSearch;
   });
 
   // Update selected session if data changes
@@ -963,7 +974,9 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
           ))}
           {filtered.length === 0 && (
             <div className="ad-chats-empty-list p-8 text-center text-gray-400 text-sm">
-              Tidak ada sesi pada filter ini.
+              {searchQuery.trim()
+                ? `Tidak ditemukan antrean dengan kata kunci "${searchQuery}".`
+                : 'Tidak ada sesi pada filter ini.'}
             </div>
           )}
         </div>
