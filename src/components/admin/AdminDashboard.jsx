@@ -721,6 +721,7 @@ function TemplatesTab({ initialQuery = '', newDraft = null, onClearDraft }) {
 function ChatsTab({ remoteSessions = [], onChatUpdated }) {
   const [status, setStatus] = useState('needs_attention');
   const [channelFilter, setChannelFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selected, setSelected] = useState(null);
   const [messages, setMessages] = useState([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
@@ -885,6 +886,28 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
             >
               📱 WA
             </button>
+          </div>
+
+          {/* Kolom Pencarian Antrean */}
+          <div className="ad-chats-search-wrapper">
+            <span className="ad-chats-search-icon">🔍</span>
+            <input
+              type="text"
+              className="ad-chats-search-input"
+              placeholder="Cari nama WP atau ID Sesi..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="ad-chats-search-clear"
+                title="Hapus pencarian"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
           <select value={status} onChange={(event) => setStatus(event.target.value)} className="ad-chats-status-select w-full p-2 border rounded-lg text-sm bg-white outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 mb-2">
