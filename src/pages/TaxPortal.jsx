@@ -198,6 +198,33 @@ function TaxPortal() {
       >
         <div className="hero-inner">
           <div className="welcome-copy">
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              backgroundColor: 'rgba(255, 255, 255, 0.12)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              padding: '6px 14px',
+              borderRadius: '30px',
+              marginBottom: '14px',
+              fontSize: '0.82rem',
+              color: '#FFFFFF',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              flexWrap: 'wrap'
+            }}>
+              <span style={{ backgroundColor: '#DC2626', color: '#FFFFFF', fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '12px' }}>
+                UPDATE 2026
+              </span>
+              <span>Regulasi Baru: <strong>PP 20/2026 (UMKM 0,5%)</strong> &amp; <strong>Hapus Sanksi 100%</strong></span>
+              <button 
+                type="button"
+                onClick={() => document.getElementById('kalkulator')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                style={{ background: 'none', border: 'none', color: '#FFD100', cursor: 'pointer', fontWeight: 800, fontSize: '0.82rem', padding: 0 }}
+              >
+                Hitung Sekarang →
+              </button>
+            </div>
             <span className="eyebrow">Pusat Layanan & Informasi Perpajakan</span>
             <h1 id="welcome-title">Asisten Virtual KPP Pratama Rengat</h1>
             <p className="welcome-description">
@@ -303,7 +330,7 @@ function TaxPortal() {
                         Coba kata kunci populer:
                       </div>
                       <div className="search-chips-container" style={{ justifyContent: 'center' }}>
-                        {['EFIN', 'NPWP', 'SPT', 'e-Billing', 'Coretax'].map((chip) => (
+                        {['PP 20/2026', 'Hapus Sanksi', 'UMKM 0,5%', 'EFIN', 'NPWP', 'SPT', 'Coretax'].map((chip) => (
                           <span 
                             key={chip} 
                             className="search-chip" 
@@ -330,7 +357,7 @@ function TaxPortal() {
               <button className="btn-primary-hero" onClick={() => document.getElementById('layanan')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>Jelajahi Layanan</button>
               <button className="btn-outline-hero" onClick={() => setShowTrackerModal(true)}>🔍 Lacak Berkas</button>
               <button className="btn-outline-hero" onClick={() => document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>Lihat FAQ</button>
-              <button className="btn-outline-hero" onClick={() => document.getElementById('kalkulator')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>🧮 Hitung Pajak</button>
+              <button className="btn-outline-hero" onClick={() => document.getElementById('kalkulator')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>🧮 Hitung Pajak (PP 20/2026)</button>
               <span className="action-hint"><span className="pulse-arrow">↗</span> Chatbot di pojok kanan bawah</span>
             </div>
           </div>

@@ -17,23 +17,35 @@ const CANDIDATE_MODELS = [
 const SYSTEM_INSTRUCTION = `Anda adalah Asisten Virtual (Chatbot) AI resmi untuk Kantor Pelayanan Pajak (KPP) Pratama Rengat, Direktorat Jenderal Pajak (DJP).
 Tugas Anda adalah melayani dan menjawab pertanyaan Wajib Pajak seputar perpajakan di Indonesia secara ramah, informatif, ringkas, dan akurat dalam Bahasa Indonesia.
 
+Informasi Regulasi & Kebijakan Perpajakan Terkini (2026):
+1. Peraturan Pemerintah No. 20 Tahun 2026 (PP 20/2026):
+   - Mengubah PP No. 55 Tahun 2022 terkait PPh Final UMKM 0,5%.
+   - Subjek yang berhak menggunakan tarif 0,5% dipersempit hanya untuk: (a) Wajib Pajak Orang Pribadi (ada fasilitas bebas s.d. omzet Rp 500 Juta/tahun), (b) Perseroan Perorangan (PT 1 Orang), dan (c) Koperasi.
+   - Badan usaha baru CV, Firma, dan PT Reguler TIDAK BERHAK menggunakan tarif 0,5% dan langsung dikenai tarif umum PPh Badan (fasilitas Pasal 31E). Badan lama hanya berlaku sampai habis sisa masa berlakunya tanpa perpanjangan.
+   - Pengecualian Pekerjaan Bebas Diperluas: Jasa kreator konten digital (influencer, selebgram, YouTuber, vlogger, blogger), penceramah, pengajar, moderator, dokter, notaris, akuntan, pengacara DILARANG menggunakan tarif UMKM 0,5% walau omzet < Rp 4,8 Miliar. Wajib tarif umum/Norma NPPN.
+   - Aturan Anti-Pecah Usaha: Omzet suami dan istri digabung, serta omzet Orang Pribadi dengan Perseroan Perorangan miliknya digabung untuk menguji batas ambang Rp 4,8 Miliar.
+   - Larangan Biaya Suap & Gratifikasi (Pasal 20A): Dilarang dijadikan pengurang penghasilan bruto.
+
+2. Kebijakan Penghapusan Sanksi Pajak 100% (KEP-239/PJ/2026):
+   - DJP membebaskan sanksi denda administrasi sebesar 100% untuk pelunasan pokok pajak kurang bayar SPT Tahunan (hingga tahun pajak 2025) dan SPT Masa (hingga September 2026) pada periode 8 Oktober s.d. 31 Desember 2026.
+   - Pengurangan turun menjadi 50% pada Januari–Maret 2027 dan 25% pada April–Juni 2027.
+
+3. Aturan Baru Pembayaran Utang Pajak (PMK 71/2026):
+   - Berlaku sejak 2 Oktober 2026: Setoran pembayaran utang pajak dialokasikan memprioritaskan pelunasan POKOK UTANG PAJAK terlebih dahulu, tidak lagi dihitung proporsional dengan denda.
+
+4. Coretax DJP & AI Pengawasan:
+   - Portal terpadu Coretax DJP terintegrasi dengan pemanfaatan AI untuk transparansi pengawasan kepatuhan WP.
+
 Informasi Kantor & Wilayah Layanan:
 - Lokasi Kantor: KPP Pratama Rengat beralamat di Jalan Bupati Tulus No.9 Kampung Besar Kota, Sekip Hulu, Kec. Rengat, Kabupaten Indragiri Hulu, Riau 29319.
 - Wilayah Kerja Pengawasan: Meliputi Kabupaten Indragiri Hulu (Inhu), Kabupaten Indragiri Hilir (Inhil), dan Kabupaten Kuantan Singingi (Kuansing).
 - Jam Pelayanan Tatap Muka (TPT): Senin s.d. Jumat, pukul 08.00 - 16.00 WIB (hari kerja).
 - Layanan Digital: Portal resmi Coretax DJP (pendaftaran NPWP/NITKU, pelaporan SPT Tahunan/Masa, pembuatan kode billing, dsb.).
 
-Layanan Populer:
-1. Pembuatan Kode Billing: PPh Final UMKM (0,5%) dan PPh Pengalihan Hak atas Tanah/Bangunan (PHTB).
-2. Pelaporan SPT Masa PPN bagi Pengusaha Kena Pajak (PKP) via Coretax.
-3. Surat Keterangan Bebas (SKB): Diproses maksimal 3 hari kerja setelah berkas lengkap.
-4. Pemutakhiran Profil: NIK-NPWP, perubahan email dan nomor HP terdaftar.
-
 Aturan Respons:
-1. Berikan jawaban langsung, ramah, dan sopan kepada Wajib Pajak tanpa menampilkan evaluasi atau catatan teknis internal sistem.
-2. Gunakan poin-poin (bullet points) atau langkah bernomor agar mudah dipahami.
-3. Jika pertanyaan sepenuhnya di luar konteks perpajakan, keuangan, atau administrasi negara, tolak dengan sopan dan jelaskan bahwa Anda dikhususkan untuk melayani perpajakan.
-4. Untuk permohonan data pribadi/rahasia, sengketa pajak, atau konfirmasi bukti pembayaran khusus, sarankan berkonsultasi langsung dengan petugas Helpdesk WhatsApp atau Account Representative (AR) di KPP Pratama Rengat.`;
+1. Berikan jawaban langsung, ramah, dan solutif dengan merujuk regulasi resmi di atas.
+2. Gunakan poin-poin agar mudah dipahami.
+3. Ingatkan bahwa seluruh layanan di KPP Pratama Rengat GRATIS (Rp 0).`;
 
 /**
  * Intelligent Fallback Respon Resmi KPP Pratama Rengat
@@ -41,6 +53,89 @@ Aturan Respons:
  */
 function getSmartTaxFallback(query) {
   const q = (query || "").toLowerCase();
+
+  // 1. Pertanyaan seputar PP 20/2026 / Pecah Usaha / UMKM 0,5%
+  if (
+    q.includes("pp 20") ||
+    q.includes("pp20") ||
+    q.includes("pecah usaha") ||
+    q.includes("anti pecah") ||
+    q.includes("kreator") ||
+    q.includes("influencer") ||
+    q.includes("selebgram") ||
+    q.includes("youtuber") ||
+    q.includes("pekerjaan bebas")
+  ) {
+    return `📌 **Ketentuan Baru PP No. 20 Tahun 2026 (Perubahan PP 55/2022)**
+
+Peraturan Pemerintah No. 20 Tahun 2026 mengatur ketentuan PPh Final UMKM 0,5% dengan poin-poin utama:
+
+1. **Subjek Pajak yang Berhak Dipersempit:**
+   • Wajib Pajak Orang Pribadi (ada fasilitas bebas s.d omzet Rp 500 Juta/tahun).
+   • Perseroan Perorangan (PT 1 Orang yang didirikan sendiri).
+   • Koperasi.
+   *(Catatan: CV, Firma, dan PT Reguler Baru TIDAK BERHAK lagi menggunakan tarif 0,5% dan langsung dikenai tarif umum PPh Badan).*
+
+2. **Pekerjaan Bebas & Kreator Konten Dikecualikan:**
+   • Influencer, selebgram, YouTuber, blogger, vlogger, penceramah, pengajar, moderator, dokter, notaris, dan pengacara **TIDAK BISA** menggunakan tarif 0,5% walau omzet di bawah Rp 4,8 Miliar. Wajib menggunakan tarif umum PPh (NPPN atau Pembukuan).
+
+3. **Aturan Akumulasi Omzet Anti-Pecah Usaha:**
+   • Omzet suami dan istri digabungkan.
+   • Omzet Orang Pribadi dengan Perseroan Perorangan miliknya digabungkan untuk batas maksimal Rp 4,8 Miliar per tahun.
+
+4. **Larangan Biaya Suap (Pasal 20A):**
+   • Biaya suap/gratifikasi dilarang menjadi pengurang pajak bruto.
+
+💡 Ingin simulasi kelayakan UMKM Anda? Buka menu **Kalkulator Pajak** di portal ini.`;
+  }
+
+  // 2. Pertanyaan seputar Pemutihan / Penghapusan Sanksi Denda KEP-239/PJ/2026
+  if (
+    q.includes("sanksi") ||
+    q.includes("denda") ||
+    q.includes("kep-239") ||
+    q.includes("kep 239") ||
+    q.includes("pemutihan") ||
+    q.includes("hapus denda") ||
+    q.includes("potong denda") ||
+    q.includes("diskon")
+  ) {
+    return `📌 **Program Penghapusan Sanksi Pajak 100% (KEP-239/PJ/2026)**
+
+DJP Kementerian Keuangan memberikan pembebasan sanksi administratif dan denda pajak:
+
+• **Periode 8 Oktober s.d. 31 Desember 2026:**
+  Diskon Denda **100% (Sanksi DIHAPUS PENUH / Rp 0)** jika Wajib Pajak melunasi pokok kurang bayar dan menyampaikan SPT.
+• **Periode Januari – Maret 2027:** Pengurangan denda menjadi **50%**.
+• **Periode April – Juni 2027:** Pengurangan denda menjadi **25%**.
+
+**Cakupan SPT yang Berhak:**
+1. SPT Tahunan PPh Kurang Bayar s.d. Tahun Pajak 2025.
+2. SPT Masa PPh / PPN Kurang Bayar s.d. Masa Pajak September 2026.
+3. Surat Tagihan Pajak (STP) / SKPKB bunga keterlambatan.
+
+💡 Anda dapat menghitung penghematan denda Anda secara langsung melalui tab **Hapus Sanksi Pajak 100%** pada Kalkulator Pajak Terpadu kami.`;
+  }
+
+  // 3. Pertanyaan seputar PMK 71/2026 (Aturan Pembayaran Utang Pajak)
+  if (q.includes("pmk 71") || q.includes("utang pajak") || q.includes("bayar utang") || q.includes("pokok utang")) {
+    return `📌 **Mekanisme Baru Pembayaran Utang Pajak (PMK 71/2026)**
+
+Mulai berlaku sejak **2 Oktober 2026**:
+• Pembayaran atau setoran utang pajak yang dilakukan oleh Wajib Pajak kini **diprioritaskan untuk melunasi POKOK UTANG PAJAK terlebih dahulu**.
+• Tidak ada lagi pembebanan proporsional antara pokok dan denda seperti aturan lama. Hal ini mencegah bunga terus berbunga dan sangat meringankan wajib pajak.
+
+Untuk konsultasi cetak tagihan atau billing pelunasan, silakan hubungi Helpdesk KPP Pratama Rengat di **0812-5000-213**.`;
+  }
+
+  // 4. Pertanyaan seputar Coretax & AI
+  if (q.includes("coretax") || q.includes("ai") || q.includes("kecerdasan buatan") || q.includes("pengawasan")) {
+    return `📌 **Implementasi Coretax DJP & Pengawasan AI**
+
+• **Coretax DJP** adalah sistem administrasi perpajakan terintegrasi nasional untuk mempermudah pendaftaran, pelaporan SPT elektronik, pembuatan e-Billing, hingga permohonan SKB dan Pbk secara mandiri.
+• DJP mengintegrasikan teknologi **Artificial Intelligence (AI)** untuk memantau data transaksi dan meningkatkan kepatuhan wajib pajak secara objektif dan transparan.
+• Pastikan data profil Anda (NIK-NPWP 16 digit dan nomor HP aktif) telah dimutakhirkan di Coretax.`;
+  }
 
   if (
     q.includes("pajak itu apa") ||
@@ -60,9 +155,7 @@ Pajak adalah **kontribusi wajib kepada negara** yang terutang oleh orang pribadi
 3. **Fungsi Stabilitas:** Menjaga kestabilan ekonomi nasional dan ketahanan inflasi.
 4. **Fungsi Redistribusi:** Menyeimbangkan pendapatan masyarakat melalui subsidi pendidikan, jaminan kesehatan BPJS, dan bantuan sosial.
 
-🏛️ Di KPP Pratama Rengat, seluruh pengurusan pendaftaran NPWP, konsultasi pelaporan SPT, dan pembuatan kode billing dilayani secara **GRATIS (Rp 0)**.
-
-Ada yang ingin Anda tanyakan lebih lanjut seputar hak & kewajiban perpajakan Anda? Silakan pilih opsi menu di bawah atau ketik pertanyaan Anda.`;
+🏛️ Di KPP Pratama Rengat, seluruh pengurusan pendaftaran NPWP, konsultasi pelaporan SPT, dan pembuatan kode billing dilayani secara **GRATIS (Rp 0)**.`;
   }
 
   if (q.includes("phtb") || q.includes("tanah") || q.includes("bangunan") || q.includes("jual beli")) {
@@ -75,27 +168,30 @@ Untuk pembuatan kode billing PHTB di KPP Pratama Rengat, silakan lengkapi data b
 • **Alamat Objek Pajak:**
 • **Nominal Nilai Transaksi / PPh:**
 
-💡 *Tips:* Anda dapat mengetikkan kode **1A** pada chat untuk mendapatkan format permohonan billing cepat.`;
+💡 *Tips:* Ketikkan kode **1A** pada chat untuk mendapatkan format permohonan billing PHTB cepat.`;
   }
 
-  if (q.includes("umkm") || q.includes("0,5") || q.includes("pp 55") || q.includes("omzet") || q.includes("omset")) {
-    return `📌 **Layanan PPh Final UMKM (Tarif 0,5%)**
+  if (q.includes("umkm") || q.includes("0,5") || q.includes("omzet") || q.includes("omset")) {
+    return `📌 **Layanan PPh Final UMKM 0,5% (PP 20/2026 & PP 55/2022)**
 
-Berdasarkan PP 55 Tahun 2022:
+Sesuai aturan terbaru PP 20/2026:
 • Tarif PPh Final UMKM adalah **0,5%** dari omzet bruto bulanan.
-• Wajib Pajak Orang Pribadi dengan peredaran bruto s.d. **Rp 500 juta per tahun tidak dikenakan pajak** (bebas PPh).
-• Pembayaran disetor paling lambat tanggal 15 bulan berikutnya melalui Kode Akun Pajak 411128 KJS 420.
+• Berlaku bagi **Wajib Pajak Orang Pribadi**, **Perseroan Perorangan (PT 1 Orang)**, dan **Koperasi**.
+• Wajib Pajak Orang Pribadi berhak atas fasilitas omzet s.d. **Rp 500 Juta per tahun BEBAS PAJAK (Rp 0)**.
+• CV/PT reguler baru dan jasa kreator digital (influencer/YouTuber/pekerjaan bebas) tidak berhak atas tarif 0,5%.
+• Pembayaran disetor paling lambat tanggal 15 bulan berikutnya melalui Kode Akun Pajak **411128 KJS 420**.
 
 💡 Ketik **1B** untuk bantuan pembuatan kode billing UMKM via petugas.`;
   }
 
-  if (q.includes("spt") || q.includes("lapor") || q.includes("tahunan") || q.includes("1770") || q.includes("denda")) {
+  if (q.includes("spt") || q.includes("lapor") || q.includes("tahunan") || q.includes("1770")) {
     return `📌 **Panduan Pelaporan SPT Tahunan & Masa**
 
 • **Batas Waktu OP:** 31 Maret setiap tahun (Sanksi telat: Rp 100.000).
 • **Batas Waktu Badan:** 30 April setiap tahun (Sanksi telat: Rp 1.000.000).
 • **Kanal Pelaporan:** Login ke portal resmi [djponline.pajak.go.id](https://djponline.pajak.go.id) atau Coretax > menu **e-Filing**.
-• Siapkan Bukti Potong (1721-A1 untuk swasta atau 1721-A2 untuk ASN/TNI/Polri).`;
+• Siapkan Bukti Potong (1721-A1 untuk swasta atau 1721-A2 untuk ASN/TNI/Polri).
+• **Manfaatkan KEP-239/PJ/2026:** Jika memiliki SPT tahun lalu yang kurang bayar, lunasi sebelum 31 Desember 2026 untuk mendapatkan **pembebasan sanksi denda 100%**!`;
   }
 
   if (q.includes("npwp") || q.includes("nik") || q.includes("daftar") || q.includes("buat npwp") || q.includes("baru")) {
@@ -137,6 +233,7 @@ Jika Anda lupa atau belum mengaktifkan EFIN:
 • **Wilayah Kerja:** Kabupaten Indragiri Hulu, Indragiri Hilir, dan Kuantan Singingi.
 • **Jam Layanan Tatap Muka (TPT):** Senin s.d. Jumat, pukul 08.00 - 16.00 WIB (Hari Kerja).
 • **Telepon:** (0769) 321234
+• **WhatsApp Helpdesk:** 0812-5000-213
 • **Email Resmi:** kpp.rengat@pajak.go.id`;
   }
 
