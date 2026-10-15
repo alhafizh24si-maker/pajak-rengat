@@ -1161,3 +1161,122 @@ button:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline: none; }
 [data-theme='dark'] .chatbot-input {
   color: var(--text-main);
 }
+
+/* ========================================
+   INDIKATOR DINAMIS OPERASIONAL LOKET TPT
+   ======================================== */
+.status-badge {
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: all 0.35s ease;
+  white-space: nowrap;
+}
+.status-badge-open {
+  background-color: rgba(16, 185, 129, 0.16) !important;
+  border: 1px solid rgba(16, 185, 129, 0.45) !important;
+  color: #A7F3D0 !important;
+}
+.status-badge-closed {
+  background-color: rgba(245, 158, 11, 0.16) !important;
+  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+  color: #FDE68A !important;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse-dot 2s ease-in-out infinite;
+  transition: all 0.35s ease;
+  flex-shrink: 0;
+}
+.status-dot-open {
+  background-color: #10B981 !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.8) !important;
+}
+.status-dot-closed {
+  background-color: #F59E0B !important;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.8) !important;
+}
+.status-text {
+  font-weight: 600;
+  font-size: 11.5px;
+  letter-spacing: 0.2px;
+}
+.status-text-compact { display: none; }
+@media (max-width: 1200px) {
+  .status-text-full { display: none; }
+  .status-text-compact { display: inline; }
+}
+
+/* Jam Operasional - Live Status Card */
+.ops-live-banner {
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid;
+  transition: all var(--transition-normal);
+}
+.ops-live-open {
+  background-color: var(--green-soft);
+  border-color: rgba(5, 150, 105, 0.3);
+  color: var(--green-accent);
+}
+.ops-live-closed {
+  background-color: var(--yellow-soft);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #B45309;
+}
+.ops-live-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+}
+.ops-live-header strong {
+  font-weight: 700;
+}
+.ops-live-subtext {
+  font-size: 12px;
+  opacity: 0.92;
+  font-weight: 500;
+  padding-left: 16px;
+  line-height: 1.4;
+}
+.ops-row-today {
+  background-color: rgba(255, 199, 0, 0.08) !important;
+  border-radius: 6px;
+  padding: 8px 10px !important;
+  margin: 3px 0;
+  border-left: 3px solid var(--djp-yellow) !important;
+}
+.ops-today-tag {
+  background-color: var(--djp-yellow);
+  color: var(--djp-blue-dark);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 10px;
+  margin-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+[data-theme='dark'] .ops-live-open {
+  background-color: rgba(5, 150, 105, 0.15);
+  border-color: rgba(5, 150, 105, 0.4);
+  color: #6EE7B7;
+}
+[data-theme='dark'] .ops-live-closed {
+  background-color: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #FCD34D;
+}
+[data-theme='dark'] .ops-row-today {
+  background-color: rgba(255, 199, 0, 0.12) !important;
+}

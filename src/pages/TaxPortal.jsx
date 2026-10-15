@@ -8,6 +8,7 @@ import TaxCalculator from "../components/ui/TaxCalculator";
 import ServiceTrackerModal from "../components/ui/ServiceTrackerModal";
 import ServiceDetailModal from "../components/ui/ServiceDetailModal";
 import { marqueeItems, services, faqs, announcements, newsItems, flowSteps, quickLinks, emergencyContacts, slaMetrics, verifiedChannels } from "../data/mockData";
+import { getOfficeStatus } from "../utils/officeHours";
 
 function TaxPortal() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,6 +23,14 @@ function TaxPortal() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showTrackerModal, setShowTrackerModal] = useState(false);
   const [selectedDetailService, setSelectedDetailService] = useState(null);
+  const [officeStatus, setOfficeStatus] = useState(() => getOfficeStatus());
+
+  useEffect(() => {
+    const updateStatus = () => setOfficeStatus(getOfficeStatus());
+    updateStatus();
+    const interval = setInterval(updateStatus, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -171,7 +180,14 @@ function TaxPortal() {
                 <span>📝</span> Register
               </Link>
             </div>
-            <div className="status-badge"><span className="status-dot" /><span className="status-text">Online</span></div>
+            <div 
+              className={`status-badge ${officeStatus.isOpen ? 'status-badge-open' : 'status-badge-closed'}`}
+              title={`Status Pelayanan Kantor: ${officeStatus.isOpen ? 'Buka' : 'Tutup'} (${officeStatus.closingInfo})`}
+            >
+              <span className={`status-dot ${officeStatus.isOpen ? 'status-dot-open' : 'status-dot-closed'}`} />
+              <span className="status-text status-text-full">{officeStatus.statusText}</span>
+              <span className="status-text status-text-compact">{officeStatus.shortStatus}</span>
+            </div>
           </div>
         </header>
       </div>
@@ -395,7 +411,12 @@ function TaxPortal() {
         <section className="stats-container">
           {[
             { icon: '🕐', num: '24 Jam', label: 'Layanan Chatbot Virtual', cls: 'stat-icon-blue' },
-            { icon: '🏢', num: '08:00 - 16:00', label: 'Jam Operasional Tatap Muka', cls: 'stat-icon-green' },
+            { 
+              icon: '🏢', 
+              num: officeStatus.isOpen ? 'Buka Sekarang' : '08:00 - 16:00', 
+              label: officeStatus.isOpen ? 'Loket Fisik TPT Sedang Aktif' : 'Jam Operasional Tatap Muka', 
+              cls: officeStatus.isOpen ? 'stat-icon-green' : 'stat-icon-yellow' 
+            },
             { icon: '✅', num: '100% Gratis', label: 'Bebas Biaya & Gratifikasi', cls: 'stat-icon-yellow' },
             { icon: '👥', num: '45.000+', label: 'Wajib Pajak Terlayani', cls: 'stat-icon-purple' },
           ].map((s, i) => (
@@ -634,10 +655,42 @@ function TaxPortal() {
           <div className="ops-grid">
             <div className="ops-card">
               <div className="ops-card-header"><span className="ops-icon">📅</span><h3>Jam Operasional Kantor</h3></div>
+
+              {/* Dynamic Live Status Banner */}
+              <div className={`ops-live-banner ${officeStatus.isOpen ? 'ops-live-open' : 'ops-live-closed'}`}>
+                <div className="ops-live-header">
+                  <span className={`status-dot ${officeStatus.isOpen ? 'status-dot-open' : 'status-dot-closed'}`} />
+                  <strong>{officeStatus.isOpen ? 'Loket Fisik Sedang Buka' : 'Loket Fisik Sedang Tutup'}</strong>
+                </div>
+                <span className="ops-live-subtext">
+                  {officeStatus.isOpen
+                    ? `Waktu Sekarang: ${officeStatus.timeString} WIB • ${officeStatus.closingInfo}`
+                    : `Waktu Sekarang: ${officeStatus.timeString} WIB • ${officeStatus.closingInfo} • Chatbot 24/7 Aktif`}
+                </span>
+              </div>
+
               <div className="ops-schedule">
-                <div className="ops-row"><span className="ops-day">Senin - Kamis</span><span className="ops-time">08:00 - 16:00 WIB</span></div>
-                <div className="ops-row"><span className="ops-day">Jumat</span><span className="ops-time">08:00 - 16:30 WIB</span></div>
-                <div className="ops-row ops-closed"><span className="ops-day">Sabtu - Minggu</span><span className="ops-time">Tutup</span></div>
+                <div className={`ops-row ${officeStatus.currentDayType === 'mon_thu' ? 'ops-row-today' : ''}`}>
+                  <span className="ops-day">
+                    Senin - Kamis
+                    {officeStatus.currentDayType === 'mon_thu' && <span className="ops-today-tag">Hari Ini</span>}
+                  </span>
+                  <span className="ops-time">08:00 - 16:00 WIB</span>
+                </div>
+                <div className={`ops-row ${officeStatus.currentDayType === 'fri' ? 'ops-row-today' : ''}`}>
+                  <span className="ops-day">
+                    Jumat
+                    {officeStatus.currentDayType === 'fri' && <span className="ops-today-tag">Hari Ini</span>}
+                  </span>
+                  <span className="ops-time">08:00 - 16:30 WIB</span>
+                </div>
+                <div className={`ops-row ops-closed ${officeStatus.currentDayType === 'weekend' ? 'ops-row-today' : ''}`}>
+                  <span className="ops-day">
+                    Sabtu - Minggu
+                    {officeStatus.currentDayType === 'weekend' && <span className="ops-today-tag">Hari Ini</span>}
+                  </span>
+                  <span className="ops-time">Tutup</span>
+                </div>
                 <div className="ops-row ops-closed"><span className="ops-day">Hari Libur Nasional</span><span className="ops-time">Tutup</span></div>
               </div>
             </div>
