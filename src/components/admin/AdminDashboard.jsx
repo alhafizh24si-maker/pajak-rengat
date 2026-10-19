@@ -1368,7 +1368,9 @@ export default function AdminDashboard({ onBack }) {
               <span className="ad-officer-dot"></span>
               <span>Petugas Aktif:</span>
             </div>
-            <strong className="ad-officer-email text-white block truncate text-[13px] mt-0.5">{user?.email || 'Admin DJP'}</strong>
+            <strong className="ad-officer-email text-white block truncate text-[13px] mt-0.5">
+              {user?.user_metadata?.full_name || user?.email || 'Admin DJP'}
+            </strong>
           </div>
           <button
             onClick={handleSignOut}
@@ -1425,6 +1427,22 @@ export default function AdminDashboard({ onBack }) {
               </div>
             </div>
 
+            {user?.user_metadata?.role === 'tamu' && (
+              <span style={{
+                backgroundColor: '#FEF3C7',
+                border: '1px solid #FDE68A',
+                color: '#92400E',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                padding: '4px 10px',
+                borderRadius: '8px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                👁️ Mode Tamu (Preview)
+              </span>
+            )}
             <div className="ad-header-status flex items-center gap-4 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100">
               <div className="ad-live-pill flex items-center gap-2 text-sm font-medium">
                 <span className="ad-live-dot relative flex h-2.5 w-2.5">

@@ -6,7 +6,9 @@ const AuthContext = createContext({
   user: null,
   loading: true,
   signIn: async () => {},
+  signUp: async () => {},
   signOut: async () => {},
+  signInGuest: () => {},
 });
 
 export const AuthProvider = ({ children }) => {
@@ -15,25 +17,50 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Cek apakah ada sesi tamu tersimpan
+    let savedGuestSession = null;
+    try {
+      const stored = localStorage.getItem('pajak_rengat_guest_session');
+      if (stored) savedGuestSession = JSON.parse(stored);
+    } catch (e) {}
+
     if (!supabase) {
+      if (savedGuestSession) {
+        setSession(savedGuestSession);
+        setUser(savedGuestSession.user ?? null);
+      }
       setLoading(false);
       return;
     }
 
     // 1. Ambil session saat inisialisasi awal
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+      if (session) {
+        setSession(session);
+        setUser(session?.user ?? null);
+      } else if (savedGuestSession) {
+        setSession(savedGuestSession);
+        setUser(savedGuestSession.user ?? null);
+      } else {
+        setSession(null);
+        setUser(null);
+      }
       setLoading(false);
     }).catch((err) => {
       console.error('[AuthContext] getSession error:', err);
+      if (savedGuestSession) {
+        setSession(savedGuestSession);
+        setUser(savedGuestSession.user ?? null);
+      }
       setLoading(false);
     });
 
     // 2. Berlangganan perubahan status auth secara real-time
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+      if (session) {
+        setSession(session);
+        setUser(session?.user ?? null);
+      }
       setLoading(false);
     });
 
@@ -44,7 +71,32 @@ export const AuthProvider = ({ children }) => {
 
   const signIn = async (email, password) => {
     if (!supabase) throw new Error('Supabase client belum dikonfigurasi.');
+    try {
+      localStorage.removeItem('pajak_rengat_guest_session');
+    } catch (e) {}
     return supabase.auth.signInWithPassword({ email, password });
+  };
+
+  const signInGuest = () => {
+    const guestUser = {
+      id: 'guest_demo_user',
+      email: 'tamu.petugas@pajak.go.id',
+      user_metadata: {
+        full_name: 'Tamu / Preview Petugas',
+        role: 'tamu',
+        nip: '19950819 202601 1 001'
+      }
+    };
+    const guestSession = {
+      user: guestUser,
+      access_token: 'demo_guest_token_' + Date.now(),
+    };
+    setSession(guestSession);
+    setUser(guestUser);
+    try {
+      localStorage.setItem('pajak_rengat_guest_session', JSON.stringify(guestSession));
+    } catch (e) {}
+    return { data: { session: guestSession, user: guestUser }, error: null };
   };
 
   const signUp = async (email, password, metadata = {}) => {
@@ -74,7 +126,6 @@ export const AuthProvider = ({ children }) => {
           console.warn('[AuthContext] Info sinkronisasi users_role:', roleErr.message);
         }
       } catch (err) {
-        // Abaikan jika tabel users_role belum dibuat atau RLS membatasi
         console.warn('[AuthContext] Info sinkronisasi users_role:', err);
       }
     }
@@ -83,12 +134,19 @@ export const AuthProvider = ({ children }) => {
   };
 
   const signOut = async () => {
+    try {
+      localStorage.removeItem('pajak_rengat_guest_session');
+    } catch (e) {}
+    setSession(null);
+    setUser(null);
     if (!supabase) return;
-    return supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {}
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ session, user, loading, signIn, signInGuest, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

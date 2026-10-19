@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import logoDjp from '../../assets/img/logo-djp-nonfix.jpeg';
 
 export default function Login() {
-  const { session, signIn } = useAuth();
+  const { session, signIn, signInGuest } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -317,10 +317,71 @@ export default function Login() {
           </button>
         </form>
 
+        {/* Pemisah Mode Tamu / Demo */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          margin: '20px 0 16px 0'
+        }}>
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.12)' }} />
+          <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' }}>
+            Atau Akses Cepat
+          </span>
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.12)' }} />
+        </div>
+
+        {/* Tombol Akses Tamu / Demo Admin */}
+        <button
+          type="button"
+          onClick={() => {
+            signInGuest();
+            navigate(destination, { replace: true });
+          }}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            borderRadius: '10px',
+            border: '1.5px solid rgba(255, 199, 0, 0.35)',
+            backgroundColor: 'rgba(255, 199, 0, 0.08)',
+            color: '#FFD100',
+            fontSize: '13.5px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: 'all 0.2s',
+            backdropFilter: 'blur(8px)'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 199, 0, 0.18)';
+            e.currentTarget.style.borderColor = '#FFD100';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 199, 0, 0.08)';
+            e.currentTarget.style.borderColor = 'rgba(255, 199, 0, 0.35)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          <span>👁️ Masuk sebagai Tamu (Mode Preview Admin)</span>
+        </button>
+        <p style={{
+          fontSize: '11.5px',
+          color: '#94A3B8',
+          textAlign: 'center',
+          margin: '8px 0 0',
+          lineHeight: 1.4
+        }}>
+          Jelajahi seluruh fitur panel kontrol, analitik IKM, dan helpdesk tanpa akun Supabase.
+        </p>
+
         {/* Footer Navigation */}
         <div style={{
-          marginTop: '28px',
-          paddingTop: '20px',
+          marginTop: '22px',
+          paddingTop: '18px',
           borderTop: '1px solid rgba(255, 255, 255, 0.1)',
           textAlign: 'center'
         }}>
