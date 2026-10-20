@@ -5,13 +5,13 @@ const apiKey = typeof rawKey === "string" ? rawKey.trim().replace(/^["']|["']$/g
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
 // Daftar model resmi Google API aktif (Standar Produksi 2026)
-// Model lama (1.5-flash, 2.0-flash, 2.5-flash) sudah deprecated 404 oleh Google
+// gemini-3.5-flash-lite super cepat (1.8s) dan paling stabil untuk interaksi chatbot
 const CANDIDATE_MODELS = [
-  "gemini-3.8-flash",          // Model utama Google 2026 (aktif & direkomendasikan resmi)
-  "gemini-3.5-flash-lite",     // Super cepat, hemat kuota & respon instan
-  "gemini-3.5-flash",          // Model penalaran standar
-  "gemini-flash-latest",       // Alias model flash produksi terbaru
+  "gemini-3.5-flash-lite",     // Super cepat (1.8s), responsif, hemat kuota & akurat
+  "gemini-3.1-flash-lite",     // Cepat (3.0s) & stabil
+  "gemini-3.6-flash",          // Model penalaran standar
   "gemini-flash-lite-latest",  // Alias model lite produksi terbaru
+  "gemini-3.8-flash",          // Model analitis komprehensif 2026
 ];
 
 const SYSTEM_INSTRUCTION = `Anda adalah Asisten Virtual (Chatbot) AI resmi untuk Kantor Pelayanan Pajak (KPP) Pratama Rengat, Direktorat Jenderal Pajak (DJP).
@@ -260,6 +260,7 @@ export const askGemini = async (question, chatHistory = []) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ question: cleanQuestion, history: chatHistory }),
+      signal: AbortSignal.timeout(4000), // 4 detik timeout sebelum fallback ke Client SDK
     });
 
     if (res.ok) {

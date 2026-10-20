@@ -410,7 +410,13 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
       setIsTyping(false);
       const lower = text.toLowerCase().trim();
 
-      if (fallbackResponses.greetings.some(g => lower.includes(g))) {
+      // 1. Deteksi apakah ini sapaan murni (seperti hanya mengetik "halo", "hai", "selamat pagi" tanpa pertanyaan)
+      const cleanGreetingCheck = lower.replace(/[^a-z0-9\s]/g, ' ').trim();
+      const isPureGreeting = fallbackResponses.greetings.some(g => {
+        return cleanGreetingCheck === g || cleanGreetingCheck === `${g} bot` || cleanGreetingCheck === `${g} min` || cleanGreetingCheck === `${g} admin`;
+      });
+
+      if (isPureGreeting) {
         await addBotMessage(fallbackResponses.greetingResponse, { 
           category: 'Konsultasi', 
           priority: 'P4' 
@@ -419,6 +425,7 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
         return;
       }
 
+      // 2. Deteksi lanjutan topik kontekstual (follow-up)
       const followUp = detectFollowUp(text, context);
       if (followUp) {
         const kbItem = knowledgeBase.find(k => k.id === followUp.topic || k.topic === followUp.topic);
@@ -437,35 +444,39 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
         }
       }
 
-      const result = searchKnowledge(text);
+      // 3. Deteksi Navigasi Menu Pasti (angka menu 1 s.d. 6 atau sub-menu 1a, 1b, dst.)
+      const isStrictMenu = /^[1-6][a-c]?$/i.test(lower) || ['menu', 'layanan', 'opsi', 'pilihan'].includes(lower);
+      
+      if (isStrictMenu) {
+        const result = searchKnowledge(text);
+        if (result.type === 'KNOWLEDGE_MATCH') {
+          await addBotMessage(result.answer, {
+            category: result.category || 'Konsultasi',
+            priority: result.priority || 'P3',
+            isTemplateUsed: true,
+          });
 
-      if (result.type === 'KNOWLEDGE_MATCH') {
-        await addBotMessage(result.answer, {
-          category: result.category || 'Konsultasi',
-          priority: result.priority || 'P3',
-          isTemplateUsed: true,
-        });
+          if (lower === '1') {
+            setLastMenuId(1);
+            fetchOptions(1);
+            setBreadcrumb(prev => [...prev, { id: 1, label: '1. Billing PPh Tanah / UMKM' }]);
+          }
 
-        if (lower === '1') {
-          setLastMenuId(1);
-          fetchOptions(1);
-          setBreadcrumb(prev => [...prev, { id: 1, label: '1. Billing PPh Tanah / UMKM' }]);
+          setContext({
+            lastTopic: result.matchedId,
+            lastIntent: result.matchedTopic,
+            followUpCount: 0,
+            lastInteraction: Date.now(),
+          });
+          setNoMatchCount(0);
+          scheduleContextReset();
+          return;
         }
-
-        setContext({
-          lastTopic: result.matchedId,
-          lastIntent: result.matchedTopic,
-          followUpCount: 0,
-          lastInteraction: Date.now(),
-        });
-        setNoMatchCount(0);
-        scheduleContextReset();
-        return;
       }
 
-      // INTEGRASI GEMINI AI
-      // Jika pertanyaan tidak ada di Knowledge Base statis (KNOWLEDGE_MATCH),
-      // kita serahkan ke Gemini AI untuk menjawab secara natural.
+      // 4. INTEGRASI UTAMA GEMINI AI
+      // Seluruh pertanyaan percakapan, konsultasi perpajakan, pertanyaan regulasi PP 20/2026,
+      // perhitungan, maupun bantuan umum langsung diproses oleh Google Gemini AI!
       setIsTyping(true);
       try {
         const aiResponse = await askGemini(text, messages);
@@ -477,10 +488,20 @@ const ChatBot = ({ onMinimize, onClose, onClearChat, onNewBotMessage }) => {
       } catch (err) {
         console.error('Error invoking Gemini:', err);
         setIsTyping(false);
-        await addBotMessage('Maaf, terjadi gangguan saat menghubungi asisten AI. Silakan coba beberapa saat lagi.', {
-          category: 'Konsultasi AI',
-          priority: 'P3',
-        });
+        // Fallback jika AI mengalami kendala koneksi
+        const result = searchKnowledge(text);
+        if (result.type === 'KNOWLEDGE_MATCH') {
+          await addBotMessage(result.answer, {
+            category: result.category || 'Konsultasi',
+            priority: 'P3',
+            isTemplateUsed: true,
+          });
+        } else {
+          await addBotMessage('Maaf, saat ini asisten AI sedang mengalami gangguan jaringan. Silakan hubungi petugas via WhatsApp (0812-5000-213) atau pilih menu 1 s.d. 6.', {
+            category: 'Konsultasi AI',
+            priority: 'P3',
+          });
+        }
       }
       
       // Tetap kembalikan opsi menu beranda di bawah jawaban AI
