@@ -9,6 +9,72 @@ import ServiceTrackerModal from "../components/ui/ServiceTrackerModal";
 import ServiceDetailModal from "../components/ui/ServiceDetailModal";
 import { marqueeItems, services, faqs, announcements, newsItems, flowSteps, quickLinks, emergencyContacts, slaMetrics, verifiedChannels } from "../data/mockData";
 import { getOfficeStatus } from "../utils/officeHours";
+import { ServiceBadgeIcon } from "../components/ui/FormalIcon";
+import {
+  FiSun,
+  FiMoon,
+  FiSearch,
+  FiShield,
+  FiUserCheck,
+  FiClock,
+  FiUsers,
+  FiZap,
+  FiTarget,
+  FiCheckCircle,
+  FiAward,
+  FiGlobe,
+  FiFileText,
+  FiPercent,
+  FiPhone,
+  FiMail,
+  FiHeadphones,
+  FiAlertTriangle,
+  FiAlertCircle,
+  FiBell,
+  FiHelpCircle
+} from "react-icons/fi";
+import {
+  HiOutlineBuildingOffice2,
+  HiOutlineIdentification,
+  HiOutlineReceiptPercent,
+  HiOutlineDocumentChartBar
+} from "react-icons/hi2";
+import { BsShieldCheck, BsWhatsapp } from "react-icons/bs";
+import { RiRobot2Line } from "react-icons/ri";
+
+const renderSlaIcon = (key) => {
+  switch (key) {
+    case 'zap': return <FiZap size={18} />;
+    case 'whatsapp': return <BsWhatsapp size={18} />;
+    case 'target': return <FiTarget size={18} />;
+    case 'check': return <FiCheckCircle size={18} />;
+    case 'award': return <FiAward size={18} />;
+    case 'robot': return <RiRobot2Line size={18} />;
+    default: return <FiClock size={18} />;
+  }
+};
+
+const renderQuickLinkIcon = (key) => {
+  switch (key) {
+    case 'globe': return <FiGlobe size={18} />;
+    case 'ebilling': return <HiOutlineReceiptPercent size={18} />;
+    case 'npwp': return <HiOutlineIdentification size={18} />;
+    case 'spt': return <HiOutlineDocumentChartBar size={18} />;
+    case 'law': return <FiFileText size={18} />;
+    case 'discount': return <FiPercent size={18} />;
+    default: return <FiGlobe size={18} />;
+  }
+};
+
+const renderContactIcon = (key) => {
+  switch (key) {
+    case 'phone': return <FiPhone size={18} />;
+    case 'whatsapp': return <BsWhatsapp size={18} />;
+    case 'mail': return <FiMail size={18} />;
+    case 'headphones': return <FiHeadphones size={18} />;
+    default: return <FiPhone size={18} />;
+  }
+};
 
 function TaxPortal() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -135,10 +201,10 @@ function TaxPortal() {
               <button 
                 onClick={() => setIsDarkMode(!isDarkMode)} 
                 className="topbar-link" 
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', padding: '4px 8px' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', padding: '4px 8px', display: 'inline-flex', alignItems: 'center' }}
                 aria-label="Toggle Dark Mode"
               >
-                {isDarkMode ? '☀️' : '🌙'}
+                {isDarkMode ? <FiSun size={17} color="#FFD100" /> : <FiMoon size={17} />}
               </button>
               <button
                 type="button"
@@ -148,20 +214,22 @@ function TaxPortal() {
                   background: 'rgba(255, 255, 255, 0.12)',
                   border: '1px solid rgba(255, 255, 255, 0.25)',
                   color: '#FFFFFF',
-                  padding: '6px 11px',
+                  padding: '6px 12px',
                   borderRadius: '6px',
                   fontWeight: 600,
                   fontSize: '0.85rem',
                   cursor: 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '4px'
+                  gap: '6px'
                 }}
               >
-                <span>🔍</span> Lacak Berkas
+                <FiSearch size={14} />
+                <span>Lacak Berkas</span>
               </button>
-              <Link to="/login" className="topbar-link topbar-admin-btn" style={{ textDecoration: 'none' }}>
-                ⚙️ Panel Petugas
+              <Link to="/login" className="topbar-link topbar-admin-btn" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <FiShield size={14} />
+                <span>Panel Petugas</span>
               </Link>
               <Link to="/register" className="topbar-link topbar-reg-btn" style={{
                 textDecoration: 'none',
@@ -174,10 +242,11 @@ function TaxPortal() {
                 fontSize: '0.85rem',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '4px',
+                gap: '6px',
                 transition: 'all 0.2s'
               }}>
-                <span>📝</span> Register
+                <FiUserCheck size={14} />
+                <span>Register</span>
               </Link>
             </div>
             <div 
@@ -304,7 +373,9 @@ function TaxPortal() {
                           className="search-dropdown-item"
                           onClick={() => handleSelectService(s.id)}
                         >
-                          <span className="search-item-icon">{s.icon}</span>
+                          <span className="search-item-icon">
+                            <ServiceBadgeIcon serviceId={s.id} containerSize={28} size={15} />
+                          </span>
                           <div className="search-item-info">
                             <div className="search-item-title">
                               <span>{s.title}</span>
@@ -327,7 +398,9 @@ function TaxPortal() {
                           className="search-dropdown-item"
                           onClick={() => handleSelectFaq(f.index)}
                         >
-                          <span className="search-item-icon">❓</span>
+                          <span className="search-item-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <FiHelpCircle size={18} color="#0056B3" />
+                          </span>
                           <div className="search-item-info">
                             <div className="search-item-title">{f.q}</div>
                             <div className="search-item-desc">{f.a}</div>
@@ -410,18 +483,20 @@ function TaxPortal() {
 
         <section className="stats-container">
           {[
-            { icon: '🕐', num: '24 Jam', label: 'Layanan Chatbot Virtual', cls: 'stat-icon-blue' },
+            { Icon: FiClock, num: '24 Jam', label: 'Layanan Chatbot Virtual', cls: 'stat-icon-blue' },
             { 
-              icon: '🏢', 
+              Icon: HiOutlineBuildingOffice2, 
               num: officeStatus.isOpen ? 'Buka Sekarang' : '08:00 - 16:00', 
               label: officeStatus.isOpen ? 'Loket Fisik TPT Sedang Aktif' : 'Jam Operasional Tatap Muka', 
               cls: officeStatus.isOpen ? 'stat-icon-green' : 'stat-icon-yellow' 
             },
-            { icon: '✅', num: '100% Gratis', label: 'Bebas Biaya & Gratifikasi', cls: 'stat-icon-yellow' },
-            { icon: '👥', num: '45.000+', label: 'Wajib Pajak Terlayani', cls: 'stat-icon-purple' },
+            { Icon: BsShieldCheck, num: '100% Gratis', label: 'Bebas Biaya & Gratifikasi', cls: 'stat-icon-yellow' },
+            { Icon: FiUsers, num: '45.000+', label: 'Wajib Pajak Terlayani', cls: 'stat-icon-purple' },
           ].map((s, i) => (
             <div key={i} className="stat-card">
-              <div className={`stat-icon-wrapper ${s.cls}`}><span>{s.icon}</span></div>
+              <div className={`stat-icon-wrapper ${s.cls}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <s.Icon size={24} />
+              </div>
               <div className="stat-info"><div className="stat-number">{s.num}</div><div className="stat-label">{s.label}</div></div>
             </div>
           ))}
@@ -433,7 +508,9 @@ function TaxPortal() {
           <div className="sla-grid">
             {slaMetrics.map((m, i) => (
               <div key={i} className="sla-card" style={{ borderLeftColor: m.color, borderLeftWidth: '3px' }}>
-                <div className="sla-icon" style={{ backgroundColor: m.color + '12', color: m.color }}><span>{m.icon}</span></div>
+                <div className="sla-icon" style={{ backgroundColor: m.color + '12', color: m.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {renderSlaIcon(m.icon)}
+                </div>
                 <div className="sla-info"><strong className="sla-value">{m.value}</strong><span className="sla-label">{m.label}</span></div>
               </div>
             ))}
@@ -461,7 +538,11 @@ function TaxPortal() {
           <div className="quick-links-grid">
             {quickLinks.map((l, i) => (
               <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" className="quick-link-card">
-                <span className="quick-link-icon">{l.icon}</span><span className="quick-link-title">{l.title}</span><span className="quick-link-arrow">→</span>
+                <span className="quick-link-icon" style={{ display: 'inline-flex', alignItems: 'center', color: '#0056B3' }}>
+                  {renderQuickLinkIcon(l.icon)}
+                </span>
+                <span className="quick-link-title">{l.title}</span>
+                <span className="quick-link-arrow">→</span>
               </a>
             ))}
           </div>
@@ -482,7 +563,7 @@ function TaxPortal() {
           {searchTerm && (
             <div className="search-active-banner">
               <span>
-                🔍 Menampilkan hasil pencarian untuk: <strong>"{searchTerm}"</strong> ({filteredServices.length} layanan ditemukan)
+                Menampilkan hasil pencarian untuk: <strong>"{searchTerm}"</strong> ({filteredServices.length} layanan ditemukan)
               </span>
               <button 
                 type="button" 
@@ -501,7 +582,13 @@ function TaxPortal() {
                 id={`service-${item.id}`}
                 className={`service-item interactive-card service-item-with-img ${highlightedServiceId === item.id ? 'highlighted-service-pulse' : ''}`}
               >
-                <div className="service-card-img"><img src={item.img} alt={item.title} loading="lazy" /><span className="service-card-img-badge">{item.icon} {item.code}</span></div>
+                <div className="service-card-img">
+                  <img src={item.img} alt={item.title} loading="lazy" />
+                  <span className="service-card-img-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <ServiceBadgeIcon serviceId={item.id} containerSize={24} size={14} />
+                    <span>Layanan {item.code}</span>
+                  </span>
+                </div>
                 <div className="service-card-body">
                   <div className="service-header"><span className="service-badge-tag">{item.category}</span></div>
                   <h3>{item.title}</h3><p>{item.desc}</p>
@@ -519,10 +606,15 @@ function TaxPortal() {
                         fontSize: '12px',
                         fontWeight: 700,
                         cursor: 'pointer',
-                        textAlign: 'center'
+                        textAlign: 'center',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
                       }}
                     >
-                      📋 Syarat &amp; Format WA
+                      <FiFileText size={13} />
+                      <span>Syarat &amp; Format WA</span>
                     </button>
                     <a
                       href={item.link}
@@ -537,7 +629,11 @@ function TaxPortal() {
                 </div>
               </article>
             )) : (
-              <div className="empty-state"><div className="empty-icon">🔍</div><p>Layanan yang Anda cari tidak ditemukan.</p><button className="reset-search-btn" onClick={() => { setSearchTerm(''); setActiveTab('semua'); }}>Reset Filter</button></div>
+              <div className="empty-state">
+                <div className="empty-icon" style={{ display: 'flex', justifyContent: 'center' }}><FiSearch size={36} color="#94A3B8" /></div>
+                <p>Layanan yang Anda cari tidak ditemukan.</p>
+                <button className="reset-search-btn" onClick={() => { setSearchTerm(''); setActiveTab('semua'); }}>Reset Filter</button>
+              </div>
             )}
           </div>
         </section>
@@ -547,8 +643,14 @@ function TaxPortal() {
           <h2 className="section-title-center">Informasi & Pengumuman</h2>
           <p className="section-subtitle-center">Tetap update dengan berita terkini seputar perpajakan</p>
           <div className="news-tabs">
-            <button className={`news-tab-btn ${activeNewsTab === 'pengumuman' ? 'active' : ''}`} onClick={() => setActiveNewsTab('pengumuman')}>📢 Pengumuman</button>
-            <button className={`news-tab-btn ${activeNewsTab === 'berita' ? 'active' : ''}`} onClick={() => setActiveNewsTab('berita')}>📰 Berita & Kegiatan</button>
+            <button className={`news-tab-btn ${activeNewsTab === 'pengumuman' ? 'active' : ''}`} onClick={() => setActiveNewsTab('pengumuman')} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <FiBell size={14} />
+              <span>Pengumuman</span>
+            </button>
+            <button className={`news-tab-btn ${activeNewsTab === 'berita' ? 'active' : ''}`} onClick={() => setActiveNewsTab('berita')} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <FiFileText size={14} />
+              <span>Berita &amp; Kegiatan</span>
+            </button>
           </div>
           <div className="news-grid">
             {currentNews.map((item, i) => (
@@ -565,27 +667,71 @@ function TaxPortal() {
         </section>
 
         <section className="verification-section" id="verifikasi">
-          <div className="verification-header"><span className="verification-emoji">🛡️</span><div><h2 className="section-title-center" style={{ marginBottom: 4 }}>Verifikasi Kanal Resmi KPP Pratama Rengat</h2><p className="section-subtitle-center">Pastikan Anda berkomunikasi melalui kanal yang terverifikasi.</p></div></div>
+          <div className="verification-header">
+            <span className="verification-emoji" style={{ display: 'inline-flex', alignItems: 'center' }}>
+              <BsShieldCheck size={32} color="#0056B3" />
+            </span>
+            <div>
+              <h2 className="section-title-center" style={{ marginBottom: 4 }}>Verifikasi Kanal Resmi KPP Pratama Rengat</h2>
+              <p className="section-subtitle-center">Pastikan Anda berkomunikasi melalui kanal yang terverifikasi.</p>
+            </div>
+          </div>
           <div className="verification-grid">
             {verifiedChannels.map((ch, i) => (
-              <div key={i} className="verification-card"><div className="verification-card-icon">{ch.icon}</div><div className="verification-card-info"><strong>{ch.platform}</strong><span className="verification-handle">{ch.handle}</span><small className="verification-note">{ch.note}</small></div><span className="verification-check">✓ Terverifikasi</span></div>
+              <div key={i} className="verification-card">
+                <div className="verification-card-icon" style={{ display: 'inline-flex', alignItems: 'center', color: '#0056B3' }}>
+                  {renderContactIcon(ch.icon)}
+                </div>
+                <div className="verification-card-info">
+                  <strong>{ch.platform}</strong>
+                  <span className="verification-handle">{ch.handle}</span>
+                  <small className="verification-note">{ch.note}</small>
+                </div>
+                <span className="verification-check" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <FiCheckCircle size={13} />
+                  <span>Terverifikasi</span>
+                </span>
+              </div>
             ))}
           </div>
-          <div className="verification-cta"><button className="btn-report-scam" onClick={() => setShowScamModal(true)}>🚨 Laporkan Penipuan yang Mengatasnamakan Petugas Pajak</button></div>
+          <div className="verification-cta">
+            <button className="btn-report-scam" onClick={() => setShowScamModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+              <FiAlertTriangle size={16} />
+              <span>Laporkan Penipuan yang Mengatasnamakan Petugas Pajak</span>
+            </button>
+          </div>
         </section>
 
         {showScamModal && (
           <div className="modal-overlay" onClick={() => setShowScamModal(false)}>
             <div className="modal-scam" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-scam-header"><h3>🚨 Laporkan Penipuan Pajak</h3><button className="modal-close-btn" onClick={() => setShowScamModal(false)}>&times;</button></div>
+              <div className="modal-scam-header">
+                <h3 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                  <FiAlertTriangle size={18} color="#DC2626" />
+                  <span>Laporkan Penipuan Pajak</span>
+                </h3>
+                <button className="modal-close-btn" onClick={() => setShowScamModal(false)}>&times;</button>
+              </div>
               <div className="modal-scam-body">
                 <p>Jika Anda menerima telepon, pesan, atau kunjungan dari pihak yang mengaku petugas pajak dan meminta imbalan, segera laporkan:</p>
                 <div className="modal-scam-channels">
-                  <a href="tel:1500200" className="modal-scam-item"><span className="modal-scam-icon">📞</span><div><strong>Kring Pajak</strong><span>1500 200</span></div></a>
-                  <a href="mailto:whistleblowing@pajak.go.id" className="modal-scam-item"><span className="modal-scam-icon">📧</span><div><strong>Whistleblowing System</strong><span>whistleblowing@pajak.go.id</span></div></a>
-                  <a href="https://www.pajak.go.id/id/whistleblowing-system" target="_blank" rel="noopener noreferrer" className="modal-scam-item"><span className="modal-scam-icon">🌐</span><div><strong>Formulir Online</strong><span>www.pajak.go.id/whistleblowing</span></div></a>
+                  <a href="tel:1500200" className="modal-scam-item">
+                    <span className="modal-scam-icon" style={{ display: 'inline-flex', alignItems: 'center' }}><FiPhone size={18} /></span>
+                    <div><strong>Kring Pajak</strong><span>1500 200</span></div>
+                  </a>
+                  <a href="mailto:whistleblowing@pajak.go.id" className="modal-scam-item">
+                    <span className="modal-scam-icon" style={{ display: 'inline-flex', alignItems: 'center' }}><FiMail size={18} /></span>
+                    <div><strong>Whistleblowing System</strong><span>whistleblowing@pajak.go.id</span></div>
+                  </a>
+                  <a href="https://www.pajak.go.id/id/whistleblowing-system" target="_blank" rel="noopener noreferrer" className="modal-scam-item">
+                    <span className="modal-scam-icon" style={{ display: 'inline-flex', alignItems: 'center' }}><FiGlobe size={18} /></span>
+                    <div><strong>Formulir Online</strong><span>www.pajak.go.id/whistleblowing</span></div>
+                  </a>
                 </div>
-                <div className="modal-scam-warning"><strong>⚠️ Ingat:</strong> Petugas pajak resmi <em>tidak pernah</em> meminta transfer ke rekening pribadi, meminta PIN ATM, atau mengancam wajib pajak melalui telepon.</div>
+                <div className="modal-scam-warning" style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                  <FiAlertCircle size={18} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <div><strong>Ingat:</strong> Petugas pajak resmi <em>tidak pernah</em> meminta transfer ke rekening pribadi, meminta PIN ATM, atau mengancam wajib pajak melalui telepon.</div>
+                </div>
               </div>
               <div className="modal-scam-footer"><button className="btn-primary-hero" onClick={() => setShowScamModal(false)}>Saya Mengerti</button></div>
             </div>
@@ -599,24 +745,34 @@ function TaxPortal() {
             {emergencyContacts.map((item, i) => (
               item.link ? (
                 <a key={i} href={item.link} target={item.link.startsWith('http') ? '_blank' : undefined} rel={item.link.startsWith('http') ? 'noopener noreferrer' : undefined} className="contact-card contact-card-clickable">
-                  <span className="contact-card-icon">{item.icon}</span><div className="contact-card-info"><span className="contact-card-label">{item.label}</span><span className="contact-card-value">{item.value}</span></div>
+                  <span className="contact-card-icon" style={{ display: 'inline-flex', alignItems: 'center', color: '#0056B3' }}>
+                    {renderContactIcon(item.icon)}
+                  </span>
+                  <div className="contact-card-info"><span className="contact-card-label">{item.label}</span><span className="contact-card-value">{item.value}</span></div>
                 </a>
               ) : (
-                <div key={i} className="contact-card"><span className="contact-card-icon">{item.icon}</span><div className="contact-card-info"><span className="contact-card-label">{item.label}</span><span className="contact-card-value">{item.value}</span></div></div>
+                <div key={i} className="contact-card">
+                  <span className="contact-card-icon" style={{ display: 'inline-flex', alignItems: 'center', color: '#0056B3' }}>
+                    {renderContactIcon(item.icon)}
+                  </span>
+                  <div className="contact-card-info"><span className="contact-card-label">{item.label}</span><span className="contact-card-value">{item.value}</span></div>
+                </div>
               )
             ))}
           </div>
         </section>
 
         <section className="warning-board">
-          <div className="warning-board-icon">🚨</div>
+          <div className="warning-board-icon" style={{ display: 'flex', alignItems: 'center' }}>
+            <BsShieldCheck size={38} color="#DC2626" />
+          </div>
           <div className="warning-board-content">
             <h3>HARAP WASPADA — LAYANAN DJP 100% GRATIS</h3>
             <p>Seluruh pelayanan di lingkungan Direktorat Jenderal Pajak tidak dipungut biaya apapun.</p>
             <div className="warning-channels">
-              <a href="tel:1500200" className="warning-channel">📞 Kring Pajak: 1500 200</a>
-              <a href="mailto:whistleblowing@pajak.go.id" className="warning-channel">📧 whistleblowing@pajak.go.id</a>
-              <a href="https://www.pajak.go.id/id/whistleblowing-system" target="_blank" rel="noopener noreferrer" className="warning-channel">🌐 www.pajak.go.id/whistleblowing</a>
+              <a href="tel:1500200" className="warning-channel" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><FiPhone size={14} /> Kring Pajak: 1500 200</a>
+              <a href="mailto:whistleblowing@pajak.go.id" className="warning-channel" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><FiMail size={14} /> whistleblowing@pajak.go.id</a>
+              <a href="https://www.pajak.go.id/id/whistleblowing-system" target="_blank" rel="noopener noreferrer" className="warning-channel" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><FiGlobe size={14} /> www.pajak.go.id/whistleblowing</a>
             </div>
           </div>
         </section>
@@ -645,7 +801,7 @@ function TaxPortal() {
               <img src={kppRengatImg} alt="Kantor KPP Pratama Rengat" loading="lazy" />
               <div className="promo-video-overlay" />
               <button className="promo-play-btn" aria-label="Putar video promosi"><svg width="28" height="28" viewBox="0 0 24 24" fill="var(--djp-blue-dark)"><path d="M8 5v14l11-7z" /></svg></button>
-              <span className="promo-coming-soon-badge">🎬 Segera Hadir di Instagram</span>
+              <span className="promo-coming-soon-badge">Segera Hadir di Instagram</span>
               <div className="promo-video-caption"><h3>Asisten Virtual Pajak: Layanan Cerdas 24/7</h3><p>Diproduksi oleh Tim Kreatif KPP Pratama Rengat</p></div>
             </div>
           </div>
@@ -654,7 +810,7 @@ function TaxPortal() {
         <section className="operational-hours-section" id="kontak">
           <div className="ops-grid">
             <div className="ops-card">
-              <div className="ops-card-header"><span className="ops-icon">📅</span><h3>Jam Operasional Kantor</h3></div>
+              <div className="ops-card-header"><span className="ops-icon" style={{ display: 'inline-flex', alignItems: 'center' }}><FiClock size={20} color="#0056B3" /></span><h3>Jam Operasional Kantor</h3></div>
 
               {/* Dynamic Live Status Banner */}
               <div className={`ops-live-banner ${officeStatus.isOpen ? 'ops-live-open' : 'ops-live-closed'}`}>

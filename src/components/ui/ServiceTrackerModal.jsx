@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { FiSearch, FiCheckCircle } from 'react-icons/fi';
+import { BsWhatsapp } from 'react-icons/bs';
 
 // Database Mock Permohonan Layanan KPP Pratama Rengat
 const SAMPLE_APPLICATIONS = [
@@ -126,8 +128,8 @@ export default function ServiceTrackerModal({ isOpen, onClose }) {
           alignItems: 'center'
         }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <span style={{ fontSize: '20px' }}>🔍</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+              <FiSearch size={22} color="#FFD100" />
               <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#FFD100' }}>
                 Lacak Status Permohonan Layanan
               </h3>
@@ -396,7 +398,7 @@ export default function ServiceTrackerModal({ isOpen, onClose }) {
                     textDecoration: 'none'
                   }}
                 >
-                  <span>💬</span> Konfirmasi via Helpdesk WhatsApp
+                  <BsWhatsapp size={15} /> Konfirmasi via Helpdesk WhatsApp
                 </a>
               </div>
             </div>
@@ -408,7 +410,9 @@ export default function ServiceTrackerModal({ isOpen, onClose }) {
               borderRadius: '16px',
               border: '1px solid #FEE2E2'
             }}>
-              <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔎</div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+                <FiSearch size={36} color="#DC2626" />
+              </div>
               <h4 style={{ color: '#991B1B', fontWeight: 700, marginBottom: '6px' }}>
                 Nomor Tiket / Permohonan Tidak Ditemukan
               </h4>

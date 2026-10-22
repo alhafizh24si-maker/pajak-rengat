@@ -1,11 +1,12 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Daftar model resmi Google API aktif (Standar Produksi 2026)
-// gemini-3.5-flash-lite super cepat (1.8s) dan paling stabil untuk interaksi chatbot
 const CANDIDATE_MODELS = [
+  "gemini-2.5-flash",          // Generasi terbaru, cepat & stabil
+  "gemini-2.0-flash",          // Standar produksi Google AI
+  "gemini-1.5-flash",          // Sangat kompatibel & stabil di semua tier API key
   "gemini-3.5-flash-lite",     // Super cepat (1.8s), responsif, hemat kuota & akurat
   "gemini-3.1-flash-lite",     // Cepat (3.0s) & stabil
-  "gemini-3.6-flash",          // Model penalaran standar
   "gemini-flash-lite-latest",  // Alias model lite produksi terbaru
   "gemini-3.8-flash",          // Model analitis komprehensif 2026
 ];

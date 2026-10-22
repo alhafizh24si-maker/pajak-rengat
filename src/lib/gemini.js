@@ -4,14 +4,15 @@ const rawKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 const apiKey = typeof rawKey === "string" ? rawKey.trim().replace(/^["']|["']$/g, "") : "";
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
-// Daftar model resmi Google API aktif (Standar Produksi 2026)
-// gemini-3.5-flash-lite super cepat (1.8s) dan paling stabil untuk interaksi chatbot
+// Daftar model resmi Google API aktif (Standar Produksi & Kecepatan)
 const CANDIDATE_MODELS = [
-  "gemini-3.5-flash-lite",     // Super cepat (1.8s), responsif, hemat kuota & akurat
-  "gemini-3.1-flash-lite",     // Cepat (3.0s) & stabil
-  "gemini-3.6-flash",          // Model penalaran standar
-  "gemini-flash-lite-latest",  // Alias model lite produksi terbaru
-  "gemini-3.8-flash",          // Model analitis komprehensif 2026
+  "gemini-2.5-flash",          // Generasi terbaru, cepat & stabil
+  "gemini-2.0-flash",          // Standar produksi Google AI
+  "gemini-1.5-flash",          // Sangat kompatibel & stabil di semua tier API key
+  "gemini-3.5-flash-lite",     // Fast fallback
+  "gemini-3.1-flash-lite",
+  "gemini-flash-lite-latest",
+  "gemini-3.8-flash",
 ];
 
 const SYSTEM_INSTRUCTION = `Anda adalah Asisten Virtual (Chatbot) AI resmi untuk Kantor Pelayanan Pajak (KPP) Pratama Rengat, Direktorat Jenderal Pajak (DJP).

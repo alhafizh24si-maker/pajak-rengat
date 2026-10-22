@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { ServiceBadgeIcon } from './FormalIcon';
+import { FiFileText, FiCheck, FiCopy, FiExternalLink } from 'react-icons/fi';
+import { BsWhatsapp } from 'react-icons/bs';
 
 // Persyaratan Resmi & Format WhatsApp Layanan KPP Pratama Rengat
 const SERVICE_REQUIREMENTS = {
@@ -214,13 +217,16 @@ export default function ServiceDetailModal({ service, isOpen, onClose }) {
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <div>
-            <div style={{ fontSize: '11px', color: '#FFD100', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
-              Panduan Resmi Pelayanan DJP
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <ServiceBadgeIcon serviceId={service.id} containerSize={38} size={20} />
+            <div>
+              <div style={{ fontSize: '11px', color: '#FFD100', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                Panduan Resmi Pelayanan DJP
+              </div>
+              <h3 style={{ margin: '2px 0 0', fontSize: '17px', fontWeight: 800 }}>
+                {service.title}
+              </h3>
             </div>
-            <h3 style={{ margin: '4px 0 0', fontSize: '17px', fontWeight: 800 }}>
-              {service.icon} {service.title}
-            </h3>
           </div>
           <button
             onClick={onClose}
@@ -284,8 +290,8 @@ export default function ServiceDetailModal({ service, isOpen, onClose }) {
 
           {/* Dokumen Persyaratan */}
           <div style={{ marginBottom: '22px' }}>
-            <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span>📋</span> Dokumen Persyaratan yang Wajib Disiapkan:
+            <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FiFileText color="#0056B3" size={16} /> Dokumen Persyaratan yang Wajib Disiapkan:
             </h4>
             <div style={{
               backgroundColor: '#F8FAFC',
@@ -306,8 +312,8 @@ export default function ServiceDetailModal({ service, isOpen, onClose }) {
           {/* Format Pesan WhatsApp Cepat */}
           <div style={{ marginBottom: '22px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>💬</span> Format Permohonan Cepat ke WhatsApp:
+              <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <BsWhatsapp color="#25D366" size={16} /> Format Permohonan Cepat ke WhatsApp:
               </h4>
               <button
                 type="button"
@@ -320,10 +326,13 @@ export default function ServiceDetailModal({ service, isOpen, onClose }) {
                   borderRadius: '6px',
                   fontSize: '11.5px',
                   fontWeight: 700,
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
                 }}
               >
-                {copied ? '✅ Format Disalin!' : '📋 Salin Format'}
+                {copied ? <><FiCheck size={13} /> Format Disalin!</> : <><FiCopy size={13} /> Salin Format</>}
               </button>
             </div>
 
@@ -361,10 +370,10 @@ export default function ServiceDetailModal({ service, isOpen, onClose }) {
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '6px'
+                gap: '8px'
               }}
             >
-              <span>💬</span> Buka WhatsApp &amp; Kirim Format
+              <BsWhatsapp size={16} /> Buka WhatsApp &amp; Kirim Format
             </a>
 
             <a
@@ -382,10 +391,10 @@ export default function ServiceDetailModal({ service, isOpen, onClose }) {
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '6px'
+                gap: '8px'
               }}
             >
-              <span>🌐</span> Buka Portal DJP Resmi ↗
+              <FiExternalLink size={15} /> Buka Portal DJP Resmi
             </a>
           </div>
 

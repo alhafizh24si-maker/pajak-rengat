@@ -2,6 +2,30 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './admin.css';
+import {
+  FiTrendingUp,
+  FiBookOpen,
+  FiHeadphones,
+  FiAlertCircle,
+  FiAlertTriangle,
+  FiDownload,
+  FiMessageSquare,
+  FiCheckCircle,
+  FiTarget,
+  FiZap,
+  FiStar,
+  FiSearch,
+  FiEdit2,
+  FiCopy,
+  FiGlobe,
+  FiLogOut,
+  FiArrowLeft,
+  FiBell,
+  FiUserCheck,
+  FiCheck
+} from 'react-icons/fi';
+import { BsWhatsapp, BsShieldCheck } from 'react-icons/bs';
+import { RiGovernmentLine } from 'react-icons/ri';
 import { responseTemplates } from '../../data/templates';
 import {
   getDashboardStats,
@@ -22,10 +46,10 @@ const defaultSessions = [];
 const defaultUnmatchedItems = [];
 
 const tabs = [
-  { id: 'overview', label: 'Dashboard Kinerja', icon: '📊' },
-  { id: 'templates', label: 'Template Jawaban', icon: '📝' },
-  { id: 'chats', label: 'Helpdesk Omnichannel', icon: '💬' },
-  { id: 'unmatched', label: 'AI Belum Terjawab', icon: '⚠️' },
+  { id: 'overview', label: 'Dashboard Kinerja', Icon: FiTrendingUp },
+  { id: 'templates', label: 'Template Jawaban', Icon: FiBookOpen },
+  { id: 'chats', label: 'Helpdesk Omnichannel', Icon: FiHeadphones },
+  { id: 'unmatched', label: 'AI Belum Terjawab', Icon: FiAlertCircle },
 ];
 
 function formatDate(value) {
@@ -155,8 +179,8 @@ function OverviewTab({ period, setPeriod, stats }) {
           <p className="ad-overview-subtitle text-sm text-gray-500 mt-1">Pantau kualitas layanan chatbot dan kebutuhan pengembangan jawaban.</p>
         </div>
         <div className="flex gap-4 items-center">
-          <button onClick={handleExport} className="ad-export-btn">
-            📥 Unduh Laporan
+          <button onClick={handleExport} className="ad-export-btn" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            <FiDownload size={14} /> Unduh Laporan
           </button>
           <label className="ad-period flex items-center gap-2 text-sm font-semibold text-gray-600">
             <span>Periode:</span>
@@ -175,9 +199,9 @@ function OverviewTab({ period, setPeriod, stats }) {
 
       <div className="ad-kpi-grid">
         {[
-          ['💬', stats?.kpi?.totalSessions?.value ?? Math.round(8 * multiplier), 'Sesi Chat', '+10%'],
-          ['✅', stats?.kpi?.resolvedSessions?.value ?? Math.round(5 * multiplier), 'Resolved', '+8%'],
-          ['🎯', stats?.kpi?.matchRate?.value != null ? `${stats.kpi.matchRate.value}%` : '75%', 'Match Rate', '+3%'],
+          [FiMessageSquare, stats?.kpi?.totalSessions?.value ?? Math.round(8 * multiplier), 'Sesi Chat', '+10%'],
+          [FiCheckCircle, stats?.kpi?.resolvedSessions?.value ?? Math.round(5 * multiplier), 'Resolved', '+8%'],
+          [FiTarget, stats?.kpi?.matchRate?.value != null ? `${stats.kpi.matchRate.value}%` : '75%', 'Match Rate', '+3%'],
           [
             '⚡',
             stats?.kpi?.avgResponseTime?.display ||
@@ -193,9 +217,9 @@ function OverviewTab({ period, setPeriod, stats }) {
             'Indeks Kepuasan (IKM)',
             stats?.kpi?.csat?.grade ? `${stats.kpi.csat.grade} · ${stats.kpi.csat.percentage}%` : 'Sangat Baik (A) · 96%',
           ],
-        ].map(([icon, value, label, change]) => (
+        ].map(([KpiIcon, value, label, change]) => (
           <div className="ad-kpi" key={label}>
-            <span className="ad-kpi-icon">{icon}</span>
+            <span className="ad-kpi-icon" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><KpiIcon size={18} /></span>
             <strong>{value}</strong>
             <span>{label}</span>
             <small className={change.startsWith('-') || change.includes('Baik') ? 'good' : ''}>
@@ -266,9 +290,9 @@ function OverviewTab({ period, setPeriod, stats }) {
         <div className="ad-ikm-header">
           <div className="ad-ikm-title-area">
             <div className="ad-ikm-badge-title">
-              <span className="ad-ikm-emblem">🏛️</span>
+              <span className="ad-ikm-emblem" style={{ display: "inline-flex", alignItems: "center" }}><RiGovernmentLine size={24} color="#0056B3" /></span>
               <h3 className="ad-ikm-title">Indeks Kepuasan Masyarakat (IKM)</h3>
-              <span className="ad-ikm-score-tag">⭐ {stats?.kpi?.csat?.score || '4.8'} / 5.0</span>
+              <span className="ad-ikm-score-tag">★ {stats?.kpi?.csat?.score || '4.8'} / 5.0</span>
             </div>
             <p className="ad-ikm-subtitle">
               Standar pengukuran mutu pelayanan publik KPP Pratama Rengat berdasarkan PermenPAN-RB No. 14/2017 & DJP.
@@ -510,7 +534,7 @@ function TemplatesTab({ initialQuery = '', newDraft = null, onClearDraft }) {
     <div className="ad-templates-tab max-w-7xl mx-auto h-full flex flex-col">
       <div className="ad-template-toolbar">
         <label className="ad-search">
-          <span className="ad-search-icon absolute left-3 text-gray-400">⌕</span>
+          <span className="ad-search-icon absolute left-3 text-gray-400 flex items-center h-full"><FiSearch size={14} /></span>
           <input
             className="pl-8"
             placeholder="Cari template atau keyword..."
@@ -527,7 +551,7 @@ function TemplatesTab({ initialQuery = '', newDraft = null, onClearDraft }) {
           className={`ad-filter-btn ${favoritesOnly ? 'active' : ''}`}
           onClick={() => setFavoritesOnly((value) => !value)}
         >
-          ⭐ Favorit
+          ★ Favorit
         </button>
         <button
           className="ad-primary-btn"
@@ -554,7 +578,7 @@ function TemplatesTab({ initialQuery = '', newDraft = null, onClearDraft }) {
             >
               <span>
                 <b>
-                  {favorites.includes(template.id) ? '⭐' : '☆'} {template.category || 'Umum'}
+                  {favorites.includes(template.id) ? '★' : '☆'} {template.category || 'Umum'}
                 </b>
                 <em className={`ad-priority-badge priority-${String(template.priority || '').toLowerCase().trim()}`}>
                   {template.priority || 'P3'}
@@ -634,8 +658,8 @@ function TemplatesTab({ initialQuery = '', newDraft = null, onClearDraft }) {
               />
             </label>
             <div className="flex gap-3 mt-auto pt-4 border-t border-gray-100">
-              <button className="ad-primary-btn" onClick={handleSaveNew}>
-                💾 Simpan Template Baru
+              <button className="ad-primary-btn" onClick={handleSaveNew} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <FiCheck size={14} /> Simpan Template Baru
               </button>
               <button className="ad-ghost-btn" onClick={() => { setIsAddingNew(false); if (onClearDraft) onClearDraft(); }}>
                 Batal
@@ -669,13 +693,13 @@ function TemplatesTab({ initialQuery = '', newDraft = null, onClearDraft }) {
             <pre style={{ whiteSpace: 'pre-wrap' }}>{(selected.template || '').replace(/\*\*/g, '\n')}</pre>
             <div className="ad-preview-actions mt-auto pt-4 border-t border-gray-100">
               <button className="ad-primary-btn" onClick={copyTemplate}>
-                📋 {copied ? 'Tersalin' : 'Copy Jawaban'}
+                <FiCopy size={13} /> {copied ? 'Tersalin' : 'Copy Jawaban'}
               </button>
               <button
                 className="ad-ghost-btn"
                 onClick={() => setEditingTemplate(selected)}
               >
-                ✏️ Edit
+                <FiEdit2 size={13} /> Edit
               </button>
               <span>{selected.usageCount || 0} kali digunakan</span>
             </div>
@@ -888,20 +912,20 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
             <button
               onClick={() => setChannelFilter('web')}
               className={`ad-channel-btn channel-web text-xs px-3 py-1.5 rounded-md flex-1 transition-colors ${channelFilter === 'web' ? 'active bg-blue-600 shadow-sm text-white font-bold' : 'text-gray-500 hover:bg-gray-200'}`}
-            >
-              🌐 Web
+             style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+              <FiGlobe size={13} /> Web
             </button>
             <button
               onClick={() => setChannelFilter('whatsapp')}
               className={`ad-channel-btn channel-wa text-xs px-3 py-1.5 rounded-md flex-1 transition-colors ${channelFilter === 'whatsapp' ? 'active bg-green-600 shadow-sm text-white font-bold' : 'text-gray-500 hover:bg-gray-200'}`}
-            >
-              📱 WA
+             style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+              <BsWhatsapp size={13} /> WA
             </button>
           </div>
 
           {/* Kolom Pencarian Antrean */}
           <div className="ad-chats-search-wrapper">
-            <span className="ad-chats-search-icon">🔍</span>
+            <span className="ad-chats-search-icon flex items-center"><FiSearch size={14} /></span>
             <input
               type="text"
               className="ad-chats-search-input"
@@ -930,7 +954,7 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
           </select>
           <div className="ad-chats-counter-row flex justify-between items-center text-[11px] text-gray-500 px-1">
             <span>Ditemukan: <strong>{filtered.length} sesi</strong></span>
-            {status === 'escalated' && <span className="ad-escalated-alert text-amber-600 font-bold">⚠️ Perlu Perhatian</span>}
+            {status === 'escalated' && <span className="ad-escalated-alert text-amber-600 font-bold" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><FiAlertCircle size={12} /> Perlu Perhatian</span>}
           </div>
         </div>
 
@@ -1198,7 +1222,7 @@ function ChatsTab({ remoteSessions = [], onChatUpdated }) {
           </div>
         ) : (
           <div className="ad-chats-placeholder flex flex-col items-center justify-center h-full text-gray-400 p-8 text-center bg-gray-50/50">
-            <div className="ad-placeholder-icon w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center text-4xl mb-4 shadow-inner">💬</div>
+            <div className="ad-placeholder-icon w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center text-3xl mb-4 shadow-inner text-[#0A2540]"><FiMessageSquare size={36} /></div>
             <strong className="ad-placeholder-title text-gray-700 text-lg mb-2">Helpdesk Omnichannel Inbox</strong>
             <p className="ad-placeholder-desc max-w-sm text-sm leading-relaxed">Pilih salah satu antrean percakapan di sebelah kiri untuk membaca dan membalas pertanyaan Wajib Pajak secara langsung.</p>
           </div>
@@ -1213,7 +1237,7 @@ function UnmatchedTab({ items = defaultUnmatchedItems, onCreateAnswer }) {
   return (
     <div className="ad-unmatched-tab max-w-7xl mx-auto">
       <div className="ad-unmatched-alert bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-sm font-medium mb-6 shadow-sm flex items-start gap-3">
-        <span className="ad-alert-icon text-xl leading-none">⚠️</span>
+        <span className="ad-alert-icon text-xl leading-none flex items-center"><FiAlertTriangle size={20} color="#D97706" /></span>
         <div className="ad-alert-content">
           <p>Pertanyaan-pertanyaan di bawah ini diajukan oleh Wajib Pajak namun <strong>belum memiliki jawaban yang cocok di database AI</strong>. Buat template jawaban baru agar pertanyaan serupa otomatis terjawab ke depannya.</p>
         </div>
@@ -1232,14 +1256,14 @@ function UnmatchedTab({ items = defaultUnmatchedItems, onCreateAnswer }) {
                 className="ad-unmatched-btn mt-auto w-full bg-white border-2 border-[#173459] text-[#173459] hover:bg-[#173459] hover:text-white font-bold py-2 rounded-lg text-sm transition-colors"
                 onClick={() => onCreateAnswer && onCreateAnswer(questionText)}
               >
-                📝 Buat Template Jawaban
+                <FiEdit2 size={13} /> Buat Template Jawaban
               </button>
             </div>
           );
         })}
         {items.length === 0 && (
           <div className="ad-unmatched-empty p-12 text-center text-gray-400 bg-white rounded-xl border border-gray-200 col-span-full">
-            <span className="text-3xl block mb-2">🎉</span>
+            <span className="block mb-2 flex justify-center"><BsShieldCheck size={36} color="#059669" /></span>
             <strong className="text-gray-700 block mb-1">Semua Pertanyaan Terjawab!</strong>
             <p className="text-sm">Tidak ada pertanyaan yang gagal dijawab oleh AI saat ini.</p>
           </div>
@@ -1351,7 +1375,7 @@ export default function AdminDashboard({ onBack }) {
                   : 'text-blue-200 hover:bg-white/5 hover:text-white border-l-4 border-transparent'
                 }`}
             >
-              <span className="ad-nav-icon text-lg">{tab.icon}</span>
+              <span className="ad-nav-icon text-lg flex items-center justify-center"><tab.Icon size={18} /></span>
               <span className="ad-nav-label">{tab.label}</span>
               {tab.id === 'unmatched' && unmatchedCount > 0 && (
                 <span className="ad-nav-badge ml-auto bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
@@ -1376,7 +1400,7 @@ export default function AdminDashboard({ onBack }) {
             onClick={handleSignOut}
             className="ad-logout-btn w-full flex items-center justify-center gap-2 bg-red-500/10 text-red-300 border border-red-500/30 py-2.5 rounded-lg text-sm font-bold hover:bg-red-500 hover:text-white transition-all"
           >
-            🚪 Keluar Sistem
+            <FiLogOut size={15} /> Keluar Sistem
           </button>
         </div>
       </aside>
@@ -1391,11 +1415,11 @@ export default function AdminDashboard({ onBack }) {
               onClick={handleGoBack}
               className="ad-back-btn flex items-center gap-2 text-gray-500 hover:text-gray-800 text-sm font-bold transition-colors bg-gray-50 hover:bg-gray-100 px-3 py-1.5 rounded-lg border"
             >
-              ← Portal Publik
+              <FiArrowLeft size={14} /> Portal Publik
             </button>
             <div className="ad-header-divider h-6 w-px bg-gray-300"></div>
             <h2 className="ad-header-title text-xl font-extrabold text-[#0A2540] flex items-center gap-2">
-              <span className="ad-tab-icon">{tabs.find(t => t.id === activeTab)?.icon}</span>
+              {(() => { const CurIcon = tabs.find(t => t.id === activeTab)?.Icon || FiTrendingUp; return <span className="ad-tab-icon flex items-center"><CurIcon size={20} /></span>; })()}
               <span>{tabs.find(t => t.id === activeTab)?.label}</span>
             </h2>
           </div>
@@ -1403,8 +1427,8 @@ export default function AdminDashboard({ onBack }) {
           <div className="ad-header-actions flex items-center gap-4">
             {/* Notification Bell */}
             <div className="ad-notif-wrapper">
-              <button className="ad-notif-bell">
-                🔔
+              <button className="ad-notif-bell flex items-center justify-center">
+                <FiBell size={18} />
                 {notifications.length > 0 && <span className="ad-notif-badge"></span>}
               </button>
               <div className="ad-notif-dropdown">
@@ -1415,7 +1439,7 @@ export default function AdminDashboard({ onBack }) {
                   ) : (
                     notifications.map(n => (
                       <div key={n.id} className="ad-notif-item">
-                        <span className="ad-notif-icon">{n.type === 'alert' ? '⚠️' : 'ℹ️'}</span>
+                        <span className="ad-notif-icon flex items-center">{n.type === "alert" ? <FiAlertTriangle size={15} color="#D97706" /> : <FiCheckCircle size={15} color="#0056B3" />}</span>
                         <div className="ad-notif-content">
                           <strong>{n.text}</strong>
                           <span className="ad-notif-time">{n.time}</span>
@@ -1440,7 +1464,7 @@ export default function AdminDashboard({ onBack }) {
                 alignItems: 'center',
                 gap: '4px'
               }}>
-                👁️ Mode Tamu (Preview)
+                <FiUserCheck size={13} /> Mode Tamu (Preview)
               </span>
             )}
             <div className="ad-header-status flex items-center gap-4 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100">

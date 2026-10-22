@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BsShieldCheck } from 'react-icons/bs';
 
 const RATING_DATA = [
   { value: 1, emoji: '😡', label: 'Sangat Tidak Puas', color: '#DC2626' },
@@ -170,7 +171,7 @@ export default function SatisfactionSurveyModal({
                 marginBottom: '14px',
               }}
             >
-              🎉
+              <BsShieldCheck size={32} color="#059669" />
             </div>
             <h4 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: '700', color: '#0F172A' }}>
               Terima Kasih Banyak!
