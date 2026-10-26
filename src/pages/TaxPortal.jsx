@@ -9,7 +9,7 @@ import ServiceTrackerModal from "../components/ui/ServiceTrackerModal";
 import ServiceDetailModal from "../components/ui/ServiceDetailModal";
 import { marqueeItems, services, faqs, announcements, newsItems, flowSteps, quickLinks, emergencyContacts, slaMetrics, verifiedChannels } from "../data/mockData";
 import { getOfficeStatus } from "../utils/officeHours";
-import { ServiceBadgeIcon } from "../components/ui/FormalIcon";
+import { ServiceBadgeIcon, FormalIcon } from "../components/ui/FormalIcon";
 import {
   FiSun,
   FiMoon,
@@ -31,7 +31,9 @@ import {
   FiAlertTriangle,
   FiAlertCircle,
   FiBell,
-  FiHelpCircle
+  FiHelpCircle,
+  FiCheck,
+  FiX
 } from "react-icons/fi";
 import {
   HiOutlineBuildingOffice2,
@@ -444,9 +446,18 @@ function TaxPortal() {
             </form>
             <div className="welcome-actions">
               <button className="btn-primary-hero" onClick={() => document.getElementById('layanan')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>Jelajahi Layanan</button>
-              <button className="btn-outline-hero" onClick={() => setShowTrackerModal(true)}>🔍 Lacak Berkas</button>
-              <button className="btn-outline-hero" onClick={() => document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>Lihat FAQ</button>
-              <button className="btn-outline-hero" onClick={() => document.getElementById('kalkulator')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>🧮 Hitung Pajak (PP 20/2026)</button>
+              <button className="btn-outline-hero" onClick={() => setShowTrackerModal(true)}>
+                <FormalIcon name="search" size={15} />
+                <span>Lacak Berkas</span>
+              </button>
+              <button className="btn-outline-hero" onClick={() => document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+                <FormalIcon name="help" size={15} />
+                <span>Lihat FAQ</span>
+              </button>
+              <button className="btn-outline-hero" onClick={() => document.getElementById('kalkulator')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+                <FormalIcon name="calc" size={16} />
+                <span>Hitung Pajak (PP 20/2026)</span>
+              </button>
               <span className="action-hint"><span className="pulse-arrow">↗</span> Chatbot di pojok kanan bawah</span>
             </div>
           </div>
@@ -457,19 +468,28 @@ function TaxPortal() {
                 <div className="phone-notch" />
                 <div className="phone-screen">
                   <div className="mock-chat-header">
-                    <div className="mock-avatar-bot">🤖</div>
+                    <div className="mock-avatar-bot">
+                      <FormalIcon name="robot" size={16} color="#FFFFFF" />
+                    </div>
                     <div className="mock-header-info"><strong>Asisten Virtual KPP</strong><small className="mock-online-dot">● Online</small></div>
-                    <span className="mock-verified-badge">✓</span>
+                    <span className="mock-verified-badge" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <FiCheck size={11} color="#059669" />
+                    </span>
                   </div>
                   <div className="mock-chat-body">
                     <div className="mock-date-divider">Hari ini, 09:41</div>
-                    <div className="mock-msg mock-bot"><p>Halo! 👋 Saya asisten virtual KPP Pratama Rengat. Ada yang bisa saya bantu?</p><span className="mock-msg-time">09:41</span></div>
+                    <div className="mock-msg mock-bot"><p>Halo! Saya asisten virtual KPP Pratama Rengat. Ada yang bisa saya bantu seputar perpajakan?</p><span className="mock-msg-time">09:41</span></div>
                     <div className="mock-msg mock-user"><p>Saya lupa EFIN saya, bagaimana cara mendapatkannya kembali?</p><span className="mock-msg-time">09:42</span></div>
-                    <div className="mock-msg mock-bot"><p>Untuk pemulihan EFIN, Anda bisa melalui 3 jalur berikut:</p><ul><li>📧 Email ke <strong>kpp.rengat@pajak.go.id</strong></li><li>🏢 Datang ke kantor dengan KTP asli</li><li>💬 Lanjutkan chat ini untuk bantuan</li></ul><span className="mock-msg-time">09:42</span></div>
-                    <div className="mock-msg mock-user"><p>Saya mau via chat ini saja, terima kasih! 😊</p><span className="mock-msg-time">09:43</span></div>
+                    <div className="mock-msg mock-bot"><p>Untuk pemulihan EFIN, Anda bisa melalui 3 jalur resmi:</p><ul><li>Email ke <strong>kpp.rengat@pajak.go.id</strong></li><li>Datang langsung ke loket TPT KPP</li><li>Konsultasi via chatbot interaktif ini</li></ul><span className="mock-msg-time">09:42</span></div>
+                    <div className="mock-msg mock-user"><p>Saya ingin via chatbot ini saja, terima kasih!</p><span className="mock-msg-time">09:43</span></div>
                     <div className="mock-typing-indicator"><span></span><span></span><span></span></div>
                   </div>
-                  <div className="mock-chat-input"><span className="mock-input-placeholder">Ketik pesan...</span><span className="mock-send-btn">➤</span></div>
+                  <div className="mock-chat-input">
+                    <span className="mock-input-placeholder">Ketik pesan...</span>
+                    <span className="mock-send-btn" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <FormalIcon name="send" size={12} color="#FFFFFF" style={{ marginLeft: '1px' }} />
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -569,8 +589,10 @@ function TaxPortal() {
                 type="button" 
                 onClick={() => setSearchTerm('')} 
                 className="search-reset-tag"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
               >
-                Reset Pencarian ✕
+                <span>Reset Pencarian</span>
+                <FiX size={12} />
               </button>
             </div>
           )}
@@ -851,7 +873,7 @@ function TaxPortal() {
               </div>
             </div>
             <div className="ops-card">
-              <div className="ops-card-header"><span className="ops-icon">📍</span><h3>Alamat Kantor</h3></div>
+              <div className="ops-card-header"><span className="ops-icon" style={{ display: 'inline-flex', alignItems: 'center' }}><FormalIcon name="location" size={20} color="#0056B3" /></span><h3>Alamat Kantor</h3></div>
               <div className="ops-address">
                 <p className="address-main">KPP Pratama Rengat</p>
                 <p>Jl. Bupati Tulus No. 9, Sekip Hulu, Kec. Rengat</p>
@@ -875,16 +897,24 @@ function TaxPortal() {
                   rel="noopener noreferrer"
                   className="map-open-link"
                 >
-                  <span>📍 Buka di Google Maps</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <FormalIcon name="location" size={14} />
+                    <span>Buka di Google Maps</span>
+                  </span>
                   <span>↗</span>
                 </a>
               </div>
             </div>
             <div className="ops-card">
-              <div className="ops-card-header"><span className="ops-icon">🎯</span><h3>Misi Kami</h3></div>
+              <div className="ops-card-header"><span className="ops-icon" style={{ display: 'inline-flex', alignItems: 'center' }}><FormalIcon name="target" size={20} color="#0056B3" /></span><h3>Misi Kami</h3></div>
               <div className="ops-mission">
                 {['Meningkatkan kepatuhan pajak sukarela', 'Melayani dengan integritas dan akuntabilitas', 'Menyederhanakan proses administrasi perpajakan', 'Transparan dan bebas dari pungutan liar', 'Membangun budaya bayar pajak sebagai kebanggaan'].map((m, i) => (
-                  <div key={i} className="mission-item"><span className="mission-check">✓</span><span>{m}</span></div>
+                  <div key={i} className="mission-item">
+                    <span className="mission-check" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <FiCheck size={12} color="#0056B3" />
+                    </span>
+                    <span>{m}</span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -917,7 +947,7 @@ function TaxPortal() {
                 <a href="https://www.facebook.com/DirektoratJenderalPajak" target="_blank" rel="noopener noreferrer" className="social-card social-facebook"><svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span>DJP Official</span></a>
                 <a href="https://www.youtube.com/@DitjenPajak" target="_blank" rel="noopener noreferrer" className="social-card social-youtube"><svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg><span>Ditjen Pajak</span></a>
               </div>
-              <div className="footer-kring-pajak"><a href="tel:1500200" className="kring-badge" style={{ textDecoration: 'none' }}><span className="kring-icon">📞</span><div><strong>Kring Pajak</strong><span>1500 200</span></div></a></div>
+              <div className="footer-kring-pajak"><a href="tel:1500200" className="kring-badge" style={{ textDecoration: 'none' }}><span className="kring-icon" style={{ display: 'inline-flex', alignItems: 'center' }}><FormalIcon name="phone" size={18} /></span><div><strong>Kring Pajak</strong><span>1500 200</span></div></a></div>
             </div>
           </div>
         </div>

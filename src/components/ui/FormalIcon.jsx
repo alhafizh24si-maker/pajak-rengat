@@ -35,7 +35,8 @@ import {
   FiCheck,
   FiX,
   FiSend,
-  FiHelpCircle
+  FiHelpCircle,
+  FiMapPin
 } from 'react-icons/fi';
 import {
   HiOutlineIdentification,
@@ -186,6 +187,11 @@ export function FormalIcon({ name, size = 18, color, className = '', style = {} 
     case 'robot': return <RiRobot2Line {...iconProps} />;
     case 'chart': return <FiTrendingUp {...iconProps} />;
     case 'help': return <FiHelpCircle {...iconProps} />;
+    case 'calc':
+    case 'calculator': return <HiOutlineCalculator {...iconProps} />;
+    case 'location':
+    case 'map-pin':
+    case 'pin': return <FiMapPin {...iconProps} />;
 
     // Kontak & Saluran
     case 'phone': return <FiPhone {...iconProps} />;

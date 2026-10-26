@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiSearch, FiCheckCircle } from 'react-icons/fi';
+import { FiSearch, FiCheckCircle, FiX, FiCheck } from 'react-icons/fi';
 import { BsWhatsapp } from 'react-icons/bs';
 
 // Database Mock Permohonan Layanan KPP Pratama Rengat
@@ -155,7 +155,7 @@ export default function ServiceTrackerModal({ isOpen, onClose }) {
             }}
             aria-label="Tutup Modal"
           >
-            ✕
+            <FiX size={18} />
           </button>
         </div>
 
@@ -311,7 +311,7 @@ export default function ServiceTrackerModal({ isOpen, onClose }) {
                           fontWeight: 700,
                           fontSize: '13px'
                         }}>
-                          {isPassed ? (isCurrent ? s.step : '✓') : s.step}
+                          {isPassed ? (isCurrent ? s.step : <FiCheck size={14} style={{ strokeWidth: 2.5 }} />) : s.step}
                         </div>
                         <span style={{
                           fontSize: '11px',

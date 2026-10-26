@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ServiceBadgeIcon } from './FormalIcon';
-import { FiFileText, FiCheck, FiCopy, FiExternalLink } from 'react-icons/fi';
+import { FiFileText, FiCheck, FiCopy, FiExternalLink, FiX } from 'react-icons/fi';
 import { BsWhatsapp } from 'react-icons/bs';
 
 // Persyaratan Resmi & Format WhatsApp Layanan KPP Pratama Rengat
@@ -243,8 +243,9 @@ export default function ServiceDetailModal({ service, isOpen, onClose }) {
               alignItems: 'center',
               justifyContent: 'center'
             }}
+            aria-label="Tutup Detail Layanan"
           >
-            ✕
+            <FiX size={18} />
           </button>
         </div>
 
