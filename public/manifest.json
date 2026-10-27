@@ -1,0 +1,23 @@
+{
+  "name": "Portal Layanan Pajak & Asisten AI KPP Pratama Rengat",
+  "short_name": "Pajak Rengat",
+  "description": "Portal Resmi Layanan Perpajakan Terpadu dan Helpdesk AI KPP Pratama Rengat, Direktorat Jenderal Pajak",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#002B49",
+  "theme_color": "#002B49",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/og-image.jpg",
+      "sizes": "1736x908",
+      "type": "image/jpeg"
+    }
+  ]
+}
