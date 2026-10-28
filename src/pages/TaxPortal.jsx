@@ -124,6 +124,25 @@ function TaxPortal() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Shortcut Keyboard: Tombol Esc untuk menutup modal & pencarian
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        if (selectedDetailService) {
+          setSelectedDetailService(null);
+        } else if (showTrackerModal) {
+          setShowTrackerModal(false);
+        } else if (showScamModal) {
+          setShowScamModal(false);
+        } else if (isSearchOpen) {
+          setIsSearchOpen(false);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedDetailService, showTrackerModal, showScamModal, isSearchOpen]);
+
 
   const currentNews = activeNewsTab === "pengumuman" ? announcements : newsItems;
 
