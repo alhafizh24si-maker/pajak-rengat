@@ -1,9 +1,34 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ChatBot from './ChatBot';
+import { FiX } from 'react-icons/fi';
 
 const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [showTeaser, setShowTeaser] = useState(false);
+
+  useEffect(() => {
+    // Tampilkan sapaan otomatis setelah 2.5 detik jika chat belum dibuka
+    const timer = setTimeout(() => {
+      const dismissed = sessionStorage.getItem('kpp_rengat_teaser_dismissed');
+      if (!dismissed) {
+        setShowTeaser(true);
+      }
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleDismissTeaser = (e) => {
+    e.stopPropagation();
+    setShowTeaser(false);
+    sessionStorage.setItem('kpp_rengat_teaser_dismissed', 'true');
+  };
+
+  const handleOpenChat = () => {
+    setIsOpen(true);
+    setShowTeaser(false);
+  };
 
   return (
     <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999 }}>
@@ -12,7 +37,7 @@ const ChatWidget = () => {
           style={{
             width: '390px',
             maxWidth: 'calc(100vw - 32px)',
-            height: 'min(600px, calc(100vh - 40px))',
+            height: 'min(620px, calc(100vh - 40px))',
             borderRadius: '20px',
             overflow: 'hidden',
             boxShadow: '0 24px 60px -10px rgba(10, 37, 64, 0.35), 0 8px 24px -4px rgba(10, 37, 64, 0.2)',
@@ -27,8 +52,72 @@ const ChatWidget = () => {
         </div>
       ) : (
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-          {/* Tooltip Hover */}
-          {isHovered && (
+          {/* Teaser Bubble (Muncul Otomatis) */}
+          {showTeaser && !isHovered && (
+            <div
+              onClick={handleOpenChat}
+              style={{
+                position: 'absolute',
+                right: '74px',
+                bottom: '8px',
+                backgroundColor: '#0A2540',
+                color: '#FFFFFF',
+                padding: '10px 14px',
+                borderRadius: '12px',
+                fontSize: '12.5px',
+                lineHeight: 1.4,
+                boxShadow: '0 10px 25px rgba(10, 37, 64, 0.28)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                maxWidth: '260px',
+                animation: 'teaserFadeIn 0.3s ease-out',
+                border: '1px solid rgba(255, 209, 0, 0.3)'
+              }}
+            >
+              <div>
+                <span style={{ color: '#FFD100', fontWeight: 700 }}>Hai! Butuh bantuan?</span>
+                <p style={{ margin: '2px 0 0 0', fontSize: '11.5px', color: '#E2E8F0' }}>
+                  Tanyakan seputar NPWP, SPT, atau PP 20/2026 di sini.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleDismissTeaser}
+                title="Tutup pesan ini"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#94A3B8',
+                  cursor: 'pointer',
+                  padding: '2px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  alignSelf: 'flex-start'
+                }}
+              >
+                <FiX size={14} />
+              </button>
+              <div
+                style={{
+                  position: 'absolute',
+                  right: '-6px',
+                  bottom: '18px',
+                  width: 0,
+                  height: 0,
+                  borderTop: '6px solid transparent',
+                  borderBottom: '6px solid transparent',
+                  borderLeft: '6px solid #0A2540'
+                }}
+              />
+            </div>
+          )}
+
+          {/* Tooltip Hover Manual */}
+          {isHovered && !showTeaser && (
             <div
               style={{
                 position: 'absolute',
@@ -75,7 +164,7 @@ const ChatWidget = () => {
 
           <button
             type="button"
-            onClick={() => setIsOpen(true)}
+            onClick={handleOpenChat}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             aria-label="Buka Chatbot Si Rengat"
@@ -128,6 +217,16 @@ const ChatWidget = () => {
           to {
             opacity: 1;
             transform: translateY(0) scale(1);
+          }
+        }
+        @keyframes teaserFadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
         }
       `}</style>

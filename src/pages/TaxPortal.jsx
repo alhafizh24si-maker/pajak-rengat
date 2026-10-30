@@ -33,7 +33,8 @@ import {
   FiBell,
   FiHelpCircle,
   FiCheck,
-  FiX
+  FiX,
+  FiArrowUp
 } from "react-icons/fi";
 import {
   HiOutlineBuildingOffice2,
@@ -92,6 +93,7 @@ function TaxPortal() {
   const [showTrackerModal, setShowTrackerModal] = useState(false);
   const [selectedDetailService, setSelectedDetailService] = useState(null);
   const [officeStatus, setOfficeStatus] = useState(() => getOfficeStatus());
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
     const updateStatus = () => setOfficeStatus(getOfficeStatus());
@@ -119,7 +121,10 @@ function TaxPortal() {
   }, []);
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 80);
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 80);
+      setShowBackToTop(window.scrollY > 350);
+    };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -982,6 +987,17 @@ function TaxPortal() {
         isOpen={Boolean(selectedDetailService)}
         onClose={() => setSelectedDetailService(null)}
       />
+      {showBackToTop && (
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="back-to-top-btn"
+          aria-label="Kembali ke atas"
+          title="Kembali ke atas"
+        >
+          <FiArrowUp size={20} />
+        </button>
+      )}
       <ChatWidget />
       <FloatingWhatsApp />
     </div>

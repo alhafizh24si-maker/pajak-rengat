@@ -1,15 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { FiCopy, FiCheck } from 'react-icons/fi';
 
 const ChatMessageList = ({ messages, isTyping, isOffline, hasError, onRetry }) => {
   const endOfMessagesRef = useRef(null);
-  const [now, setNow] = useState(Date.now());
-
-  // Force re-render to update read receipts over time
-  useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(interval);
-  }, []);
+  const [copiedIdx, setCopiedIdx] = useState(null);
 
   const scrollToBottom = () => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -19,14 +14,21 @@ const ChatMessageList = ({ messages, isTyping, isOffline, hasError, onRetry }) =
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const lastBotIdx = messages.map(m => m.sender).lastIndexOf('BOT');
+  const handleCopyMessage = (text, idx) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedIdx(idx);
+    setTimeout(() => {
+      setCopiedIdx(null);
+    }, 2000);
+  };
 
   return (
     <div style={{
       flex: 1,
       padding: '16px',
       overflowY: 'auto',
-      backgroundColor: '#F8F9FA',
+      backgroundColor: '#F8FAFC',
       display: 'flex',
       flexDirection: 'column',
       gap: '12px'
@@ -49,9 +51,6 @@ const ChatMessageList = ({ messages, isTyping, isOffline, hasError, onRetry }) =
         const isBot = msg.sender === 'BOT';
         const isOfficer = msg.sender === 'ADMIN' || msg.sender === 'PETUGAS';
         const isIncoming = isBot || isOfficer;
-        const isLastBotMessage = isIncoming && idx === lastBotIdx;
-        const msgAge = now - (msg.timestamp || 0);
-        const showReadReceipt = isLastBotMessage && (msgAge > 2000); 
 
         return (
           <div key={idx} style={{
@@ -61,26 +60,33 @@ const ChatMessageList = ({ messages, isTyping, isOffline, hasError, onRetry }) =
             maxWidth: '100%',
             marginBottom: '4px'
           }}>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', maxWidth: '85%' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', maxWidth: '88%' }}>
               {isIncoming && (
                 <div style={{ 
-                  minWidth: '24px', height: '24px', borderRadius: '50%', 
+                  minWidth: '26px', height: '26px', borderRadius: '50%', 
                   background: isOfficer 
                     ? 'linear-gradient(135deg, #059669, #047857)' 
                     : 'linear-gradient(135deg, #0056B3, #002B49)', 
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '12px', color: '#FFF', boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  fontSize: '13px', color: '#FFF', boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                   marginBottom: '16px'
-                }} title={isOfficer ? 'Petugas KPP' : 'AI Assistant'}>
+                }} title={isOfficer ? 'Petugas Loket KPP Pratama' : 'Asisten AI Si Rengat'}>
                   {isOfficer ? '👮' : '✨'}
                 </div>
               )}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: isIncoming ? 'flex-start' : 'flex-end' }}>
+
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: isIncoming ? 'flex-start' : 'flex-end', width: '100%' }}>
                 {isOfficer && (
-                  <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#059669', marginBottom: '3px' }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: 'bold', color: '#059669', marginBottom: '3px' }}>
                     Petugas KPP Pratama Rengat
                   </span>
                 )}
+                {isBot && (
+                  <span style={{ fontSize: '10px', fontWeight: '600', color: '#64748B', marginBottom: '3px' }}>
+                    Si Rengat (AI DJP)
+                  </span>
+                )}
+
                 <div style={{
                   padding: '12px 16px',
                   borderRadius: isIncoming ? '16px 16px 16px 4px' : '16px 16px 4px 16px',
@@ -91,14 +97,14 @@ const ChatMessageList = ({ messages, isTyping, isOffline, hasError, onRetry }) =
                     : 'linear-gradient(135deg, #0056B3, #003d82)',
                   color: isIncoming ? '#1F2937' : '#FFFFFF',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-                  fontSize: '14px',
-                  lineHeight: '1.5',
+                  fontSize: '13.5px',
+                  lineHeight: '1.55',
                   wordBreak: 'break-word',
                   whiteSpace: 'pre-line',
                   border: isOfficer 
                     ? '1px solid #BBF7D0' 
                     : isBot 
-                    ? '1px solid rgba(0,0,0,0.05)' 
+                    ? '1px solid rgba(226, 232, 240, 0.9)' 
                     : 'none'
                 }}>
                   {isIncoming ? (
@@ -110,17 +116,59 @@ const ChatMessageList = ({ messages, isTyping, isOffline, hasError, onRetry }) =
                   )}
                 </div>
                 
+                {/* Footer Pesan: Jam, Tombol Salin, atau Tanda Centang */}
                 <div style={{
-                  fontSize: '10px',
-                  color: '#94a3b8',
-                  marginTop: '6px',
+                  fontSize: '10.5px',
+                  color: '#94A3B8',
+                  marginTop: '4px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px'
+                  gap: '8px',
+                  justifyContent: isIncoming ? 'space-between' : 'flex-end',
+                  width: '100%',
+                  padding: '0 2px'
                 }}>
-                  {msg.timeString || '12:00'}
-                  {isIncoming && showReadReceipt && (
-                    <span style={{ color: '#3b82f6', fontSize: '12px', fontWeight: 'bold' }}>✓✓</span>
+                  <span>{msg.timeString || '12:00'}</span>
+
+                  {/* Tombol Salin Pesan untuk Balasan Masuk */}
+                  {isIncoming && (
+                    <button
+                      type="button"
+                      onClick={() => handleCopyMessage(msg.text, idx)}
+                      title="Salin isi jawaban"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        fontSize: '10.5px',
+                        color: copiedIdx === idx ? '#059669' : '#64748B',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'all 0.15s'
+                      }}
+                    >
+                      {copiedIdx === idx ? (
+                        <>
+                          <FiCheck size={11} color="#059669" />
+                          <span style={{ fontWeight: 600, color: '#059669' }}>Tersalin!</span>
+                        </>
+                      ) : (
+                        <>
+                          <FiCopy size={11} />
+                          <span>Salin</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+
+                  {/* Tanda Centang Dua Biru untuk Pesan Keluar Pengguna */}
+                  {!isIncoming && (
+                    <span style={{ color: '#3B82F6', fontSize: '11px', fontWeight: 'bold' }} title="Pesan Terkirim">
+                      ✓✓
+                    </span>
                   )}
                 </div>
               </div>
@@ -133,72 +181,87 @@ const ChatMessageList = ({ messages, isTyping, isOffline, hasError, onRetry }) =
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginBottom: '4px' }}>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
             <div style={{ 
-              minWidth: '24px', height: '24px', borderRadius: '50%', 
+              minWidth: '26px', height: '26px', borderRadius: '50%', 
               background: 'linear-gradient(135deg, #0056B3, #002B49)', 
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '12px', color: '#FFF', boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              fontSize: '13px', color: '#FFF', boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
             }}>✨</div>
             <div style={{
-              padding: '12px 16px', 
+              padding: '10px 14px', 
               background: '#FFFFFF', 
               borderRadius: '16px 16px 16px 4px', 
-              display: 'inline-block',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
               boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-              border: '1px solid rgba(0,0,0,0.05)'
+              border: '1px solid rgba(226, 232, 240, 0.9)'
             }}>
-            <style>
-              {`
-                @keyframes typingBounce { 
-                  0%, 60%, 100% { transform: translateY(0); } 
-                  30% { transform: translateY(-4px); } 
-                }
-                .typing-dot {
-                  display: inline-block;
-                  animation: typingBounce 1.4s infinite ease-in-out both;
-                  margin: 0 1px;
-                  color: #94a3b8;
-                  font-size: 10px;
-                }
-                .markdown-content p {
-                  margin: 0 0 8px 0;
-                }
-                .markdown-content p:last-child {
-                  margin-bottom: 0;
-                }
-                .markdown-content ol, .markdown-content ul {
-                  margin: 4px 0;
-                  padding-left: 20px;
-                }
-                .markdown-content li {
-                  margin-bottom: 4px;
-                }
-              `}
-            </style>
-            <span className="typing-dot" style={{ animationDelay: '0ms' }}>●</span>
-            <span className="typing-dot" style={{ animationDelay: '200ms' }}>●</span>
-            <span className="typing-dot" style={{ animationDelay: '400ms' }}>●</span>
-          </div>
+              <style>
+                {`
+                  @keyframes typingBounce { 
+                    0%, 60%, 100% { transform: translateY(0); opacity: 0.3; } 
+                    30% { transform: translateY(-4px); opacity: 1; } 
+                  }
+                  .typing-dot {
+                    display: inline-block;
+                    animation: typingBounce 1.4s infinite ease-in-out both;
+                    width: 6px;
+                    height: 6px;
+                    border-radius: 50%;
+                    background-color: #0056B3;
+                  }
+                  .markdown-content p {
+                    margin: 0 0 8px 0;
+                  }
+                  .markdown-content p:last-child {
+                    margin-bottom: 0;
+                  }
+                  .markdown-content ol, .markdown-content ul {
+                    margin: 4px 0;
+                    padding-left: 20px;
+                  }
+                  .markdown-content li {
+                    margin-bottom: 4px;
+                  }
+                  .markdown-content code {
+                    background: #F1F5F9;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    color: #0F172A;
+                  }
+                  .chat-retry-btn {
+                    padding: 8px 16px;
+                    background-color: #0056B3;
+                    color: #FFF;
+                    border: none;
+                    border-radius: 24px;
+                    font-size: 13px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                    transition: background-color 0.2s;
+                  }
+                  .chat-retry-btn:hover {
+                    background-color: #003d82;
+                  }
+                `}
+              </style>
+              <span className="typing-dot" style={{ animationDelay: '0ms' }} />
+              <span className="typing-dot" style={{ animationDelay: '200ms' }} />
+              <span className="typing-dot" style={{ animationDelay: '400ms' }} />
+              <span style={{ fontSize: '11px', color: '#64748B', marginLeft: '4px' }}>Si Rengat sedang mengetik...</span>
+            </div>
           </div>
         </div>
       )}
+
       {hasError && (
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
           <button
+            type="button"
+            className="chat-retry-btn"
             onClick={onRetry}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#0056B3',
-              color: '#FFF',
-              border: 'none',
-              borderRadius: '24px',
-              fontSize: '13px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-              transition: 'background 0.2s'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#003d82'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#0056B3'}
           >
             🔄 Coba Lagi
           </button>

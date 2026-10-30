@@ -1280,3 +1280,47 @@ button:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline: none; }
 [data-theme='dark'] .ops-row-today {
   background-color: rgba(255, 199, 0, 0.12) !important;
 }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.back-to-top-btn {
+  position: fixed;
+  bottom: 98px;
+  right: 28px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: #0A2540;
+  color: #FFD100;
+  border: 1.5px solid rgba(255, 209, 0, 0.45);
+  box-shadow: 0 6px 18px rgba(10, 37, 64, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 9998;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.back-to-top-btn:hover {
+  transform: translateY(-3px);
+  background-color: #0056B3;
+  color: #FFFFFF;
+  box-shadow: 0 8px 22px rgba(0, 86, 179, 0.4);
+}
+
+[data-theme='dark'] .back-to-top-btn {
+  background-color: #1E293B !important;
+  border-color: rgba(255, 209, 0, 0.6) !important;
+  color: #FFD100 !important;
+}
