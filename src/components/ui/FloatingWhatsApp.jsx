@@ -1,6 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { BsWhatsapp } from "react-icons/bs";
-import { FiX, FiSend, FiZap, FiTrash2 } from "react-icons/fi";
+import {
+  FiX,
+  FiSend,
+  FiZap,
+  FiTrash2,
+  FiChevronLeft,
+  FiChevronRight
+} from "react-icons/fi";
 
 const WA_TEMPLATES = [
   {
@@ -55,8 +62,73 @@ const FloatingWhatsApp = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [hasDragged, setHasDragged] = useState(false);
+
   const inputRef = useRef(null);
+  const chipsRef = useRef(null);
+  const isDraggingRef = useRef(false);
+  const startXRef = useRef(0);
+  const scrollLeftRef = useRef(0);
+
   const waNumber = "628125000213"; // Nomor WhatsApp resmi Helpdesk KPP Pratama Rengat
+
+  const checkScroll = () => {
+    if (chipsRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = chipsRef.current;
+      setCanScrollLeft(scrollLeft > 6);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 6);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(checkScroll, 180);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  const scrollChips = (direction) => {
+    if (chipsRef.current) {
+      const offset = direction === "left" ? -140 : 140;
+      chipsRef.current.scrollBy({ left: offset, behavior: "smooth" });
+      setTimeout(checkScroll, 250);
+    }
+  };
+
+  // Geser dengan roda mouse (vertical wheel to horizontal scroll)
+  const handleWheel = (e) => {
+    if (chipsRef.current && e.deltaY !== 0) {
+      chipsRef.current.scrollLeft += e.deltaY * 0.85;
+      checkScroll();
+    }
+  };
+
+  // Drag-to-scroll dengan mouse (geser mouse)
+  const handleMouseDown = (e) => {
+    if (!chipsRef.current) return;
+    isDraggingRef.current = true;
+    setHasDragged(false);
+    startXRef.current = e.pageX - chipsRef.current.offsetLeft;
+    scrollLeftRef.current = chipsRef.current.scrollLeft;
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDraggingRef.current || !chipsRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - chipsRef.current.offsetLeft;
+    const walk = (x - startXRef.current) * 1.35;
+    if (Math.abs(walk) > 4) {
+      setHasDragged(true);
+    }
+    chipsRef.current.scrollLeft = scrollLeftRef.current - walk;
+    checkScroll();
+  };
+
+  const handleMouseUpOrLeave = () => {
+    isDraggingRef.current = false;
+  };
 
   const handleSend = () => {
     if (message.trim()) {
@@ -73,7 +145,6 @@ const FloatingWhatsApp = () => {
   const handleSelectTemplate = (template) => {
     setMessage(template.text);
     setSelectedTemplateId(template.id);
-    // Fokuskan input setelah memilih template
     setTimeout(() => {
       inputRef.current?.focus();
     }, 100);
@@ -130,6 +201,29 @@ const FloatingWhatsApp = () => {
                 background-color: #efeae2;
                 background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 20.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z' fill='%23000000' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
               }
+              .wa-chips-container {
+                display: flex;
+                gap: 6px;
+                overflow-x: auto;
+                padding: 4px 6px 6px;
+                scroll-behavior: smooth;
+                -webkit-overflow-scrolling: touch;
+              }
+              /* Scrollbar tipis dan estetik agar pengguna tahu ada opsi di kanan */
+              .wa-chips-container::-webkit-scrollbar {
+                height: 4px;
+              }
+              .wa-chips-container::-webkit-scrollbar-track {
+                background: rgba(0, 0, 0, 0.05);
+                border-radius: 4px;
+              }
+              .wa-chips-container::-webkit-scrollbar-thumb {
+                background: #94A3B8;
+                border-radius: 4px;
+              }
+              .wa-chips-container::-webkit-scrollbar-thumb:hover {
+                background: #00A884;
+              }
               .wa-template-chip {
                 white-space: nowrap;
                 background-color: #FFFFFF;
@@ -175,6 +269,34 @@ const FloatingWhatsApp = () => {
               .wa-clear-btn:hover {
                 color: #DC2626;
                 background-color: rgba(220, 38, 38, 0.08);
+              }
+              .wa-nav-arrow {
+                position: absolute;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 22px;
+                height: 22px;
+                border-radius: 50%;
+                background-color: #005E54;
+                color: #FFFFFF;
+                border: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                z-index: 5;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+                transition: all 0.15s ease;
+              }
+              .wa-nav-arrow:hover {
+                background-color: #00A884;
+                transform: translateY(-50%) scale(1.12);
+              }
+              .wa-nav-left {
+                left: 4px;
+              }
+              .wa-nav-right {
+                right: 4px;
               }
             `}
           </style>
@@ -332,7 +454,7 @@ const FloatingWhatsApp = () => {
               backgroundColor: "#F4F6F8",
               borderTop: "1px solid #E2E8F0",
               borderBottom: "1px solid #E2E8F0",
-              padding: "8px 12px"
+              padding: "8px 10px 6px"
             }}
           >
             <div
@@ -340,17 +462,18 @@ const FloatingWhatsApp = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                marginBottom: "6px",
+                marginBottom: "4px",
                 fontSize: "11px",
                 fontWeight: 700,
-                color: "#005E54"
+                color: "#005E54",
+                padding: "0 2px"
               }}
             >
               <span
                 style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}
               >
                 <FiZap size={13} color="#00A884" />
-                <span>Pilih Template Cepat (1-Klik):</span>
+                <span>Pilih Template Cepat (Geser ⇄):</span>
               </span>
               {message && (
                 <button
@@ -372,30 +495,65 @@ const FloatingWhatsApp = () => {
               )}
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                gap: "6px",
-                overflowX: "auto",
-                scrollbarWidth: "none",
-                msOverflowStyle: "none",
-                paddingBottom: "2px"
-              }}
-            >
-              {WA_TEMPLATES.map((tpl) => (
+            {/* Area Carousel Chips dengan Navigasi Panah & Drag Mouse */}
+            <div style={{ position: "relative" }}>
+              {canScrollLeft && (
                 <button
-                  key={tpl.id}
                   type="button"
-                  onClick={() => handleSelectTemplate(tpl)}
-                  className={`wa-template-chip ${
-                    selectedTemplateId === tpl.id ? "active" : ""
-                  }`}
-                  title={`Klik untuk mengisi template: ${tpl.label}`}
+                  onClick={() => scrollChips("left")}
+                  className="wa-nav-arrow wa-nav-left"
+                  aria-label="Geser ke kiri"
+                  title="Geser ke kiri"
                 >
-                  <span>{tpl.icon}</span>
-                  <span>{tpl.label}</span>
+                  <FiChevronLeft size={13} />
                 </button>
-              ))}
+              )}
+
+              <div
+                ref={chipsRef}
+                onScroll={checkScroll}
+                onWheel={handleWheel}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUpOrLeave}
+                onMouseLeave={handleMouseUpOrLeave}
+                className="wa-chips-container"
+                style={{
+                  cursor: "grab",
+                  paddingLeft: canScrollLeft ? "20px" : "4px",
+                  paddingRight: canScrollRight ? "20px" : "4px"
+                }}
+              >
+                {WA_TEMPLATES.map((tpl) => (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    onClick={() => {
+                      if (hasDragged) return;
+                      handleSelectTemplate(tpl);
+                    }}
+                    className={`wa-template-chip ${
+                      selectedTemplateId === tpl.id ? "active" : ""
+                    }`}
+                    title={`Klik untuk mengisi template: ${tpl.label}`}
+                  >
+                    <span>{tpl.icon}</span>
+                    <span>{tpl.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {canScrollRight && (
+                <button
+                  type="button"
+                  onClick={() => scrollChips("right")}
+                  className="wa-nav-arrow wa-nav-right"
+                  aria-label="Geser ke kanan untuk melihat pilihan lainnya"
+                  title="Geser ke kanan"
+                >
+                  <FiChevronRight size={13} />
+                </button>
+              )}
             </div>
           </div>
 
